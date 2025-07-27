@@ -47,13 +47,13 @@ A comprehensive analytics and data management platform built with Next.js, TypeS
 
 ## 📚 Table of Contents
 
-- [Getting Started](#getting-started)
-- [Development](#development)
-- [Contributing](#contributing)
-- [Security](#security)
-- [FAQ](#faq)
-- [Support](#support)
-- [License](#license)
+- [Getting Started](#-getting-started)
+- [Development](#-development)
+- [Contributing](#-contributing)
+- [Security](#-security)
+- [FAQ](#-faq)
+- [Support](#-support)
+- [License](#-license)
 
 ## 🚀 Getting Started
 
