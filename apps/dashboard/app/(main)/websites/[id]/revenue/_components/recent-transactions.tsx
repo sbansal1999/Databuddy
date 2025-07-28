@@ -42,7 +42,7 @@ export function RecentTransactions({
 	if (isLoading) {
 		return (
 			<div className="space-y-3">
-				{[...new Array(5)].map((_, i) => (
+				{Array.from({ length: 5 }).map((_, i) => (
 					<TransactionSkeleton key={i} />
 				))}
 			</div>
