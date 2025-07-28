@@ -4,7 +4,6 @@ import { TrendDownIcon } from '@phosphor-icons/react';
 import { useAtom } from 'jotai';
 import { useParams } from 'next/navigation';
 import {
-	lazy,
 	Suspense,
 	useCallback,
 	useEffect,
@@ -33,7 +32,7 @@ import { GoalsList } from './_components/goals-list';
 
 const GoalsListSkeleton = () => (
 	<div className="space-y-3">
-		{[...Array(3)].map((_, i) => (
+		{[...new Array(3)].map((_, i) => (
 			<Card className="animate-pulse rounded-xl" key={`goal-skeleton-${i + 1}`}>
 				<div className="p-6">
 					<div className="mb-4 flex items-start justify-between">
