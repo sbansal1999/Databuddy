@@ -156,7 +156,9 @@ function WebsiteDetailsPage() {
 			{ enabled: !!id }
 		);
 	const isTrackingSetup = useMemo(() => {
-		if (!data || isTrackingSetupLoading) return null;
+		if (!data || isTrackingSetupLoading) {
+			return null;
+		}
 		return trackingSetupData?.tracking_setup ?? false;
 	}, [data, isTrackingSetupLoading, trackingSetupData?.tracking_setup]);
 
@@ -182,7 +184,9 @@ function WebsiteDetailsPage() {
 
 	const renderTabContent = useCallback(
 		(tabId: TabId) => {
-			if (tabId !== activeTab) return null;
+			if (tabId !== activeTab) {
+				return null;
+			}
 
 			const key = `${tabId}-${id as string}`;
 			const settingsProps: WebsiteDataTabProps = {

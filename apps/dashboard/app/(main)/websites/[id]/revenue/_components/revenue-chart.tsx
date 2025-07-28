@@ -13,13 +13,6 @@ import {
 	YAxis,
 } from 'recharts';
 import { SkeletonChart } from '@/components/charts/skeleton-chart';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
@@ -41,13 +34,17 @@ const REVENUE_COLORS = {
 
 // Enhanced tooltip with glass morphism effect
 const CustomTooltip = ({ active, payload, label }: any) => {
-	if (!(active && payload && payload.length)) return null;
+	if (!(active && payload && payload.length)) {
+		return null;
+	}
 
 	const getMetricIcon = (name: string) => {
-		if (name.toLowerCase().includes('revenue'))
+		if (name.toLowerCase().includes('revenue')) {
 			return <CurrencyDollarIcon className="h-3 w-3" />;
-		if (name.toLowerCase().includes('transaction'))
+		}
+		if (name.toLowerCase().includes('transaction')) {
 			return <CreditCardIcon className="h-3 w-3" />;
+		}
 		return <CurrencyDollarIcon className="h-3 w-3" />;
 	};
 
@@ -117,8 +114,12 @@ export function RevenueChart({
 	const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
 
 	const valueFormatter = (value: number): string => {
-		if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-		if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
+		if (value >= 1_000_000) {
+			return `$${(value / 1_000_000).toFixed(1)}M`;
+		}
+		if (value >= 1000) {
+			return `$${(value / 1000).toFixed(1)}k`;
+		}
 		return `$${value}`;
 	};
 

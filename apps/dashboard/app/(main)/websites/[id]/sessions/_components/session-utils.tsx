@@ -145,7 +145,9 @@ export const cleanUrl = (url: string) => {
 };
 
 export const getDisplayPath = (path: string) => {
-	if (!path || path === '/') return '/';
+	if (!path || path === '/') {
+		return '/';
+	}
 	const cleanPath = cleanUrl(path);
 	if (cleanPath.length > 40) {
 		const parts = cleanPath.split('/').filter(Boolean);
@@ -157,9 +159,17 @@ export const getDisplayPath = (path: string) => {
 };
 
 export const formatPropertyValue = (value: any): string => {
-	if (value === null || value === undefined) return 'null';
-	if (typeof value === 'boolean') return value.toString();
-	if (typeof value === 'number') return value.toString();
-	if (typeof value === 'string') return value;
+	if (value === null || value === undefined) {
+		return 'null';
+	}
+	if (typeof value === 'boolean') {
+		return value.toString();
+	}
+	if (typeof value === 'number') {
+		return value.toString();
+	}
+	if (typeof value === 'string') {
+		return value;
+	}
 	return JSON.stringify(value);
 };
