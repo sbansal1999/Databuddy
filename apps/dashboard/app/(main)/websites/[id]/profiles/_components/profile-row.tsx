@@ -7,7 +7,6 @@ import {
 	ClockIcon,
 	ExternalLinkIcon,
 	EyeIcon,
-	UserRound,
 	Users,
 } from 'lucide-react';
 import { FaviconImage } from '@/components/analytics/favicon-image';
