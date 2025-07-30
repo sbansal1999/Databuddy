@@ -19,13 +19,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { useOrganizationMembers } from '@/hooks/use-organizations';
+import {
+	type Organization,
+	useOrganizationMembers,
+} from '@/hooks/use-organizations';
 
-export function InviteMemberDialog({ isOpen, onClose, organizationId }: any) {
+type InviteRole = 'owner' | 'admin' | 'member';
+
+export function InviteMemberDialog({
+	isOpen,
+	onClose,
+	organizationId,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	organizationId: Organization['id'];
+}) {
 	const [inviteEmail, setInviteEmail] = useState('');
-	const [inviteRole, setInviteRole] = useState<'owner' | 'admin' | 'member'>(
-		'member'
-	);
+	const [inviteRole, setInviteRole] = useState<InviteRole>('member');
 	const { inviteMember, isInvitingMember } =
 		useOrganizationMembers(organizationId);
 
@@ -63,7 +74,7 @@ export function InviteMemberDialog({ isOpen, onClose, organizationId }: any) {
 					<div className="space-y-2">
 						<Label htmlFor="role">Role</Label>
 						<Select
-							onValueChange={(value) => setInviteRole(value as any)}
+							onValueChange={(value) => setInviteRole(value as InviteRole)}
 							value={inviteRole}
 						>
 							<SelectTrigger>

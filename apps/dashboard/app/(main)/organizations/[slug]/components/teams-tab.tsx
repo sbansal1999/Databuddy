@@ -9,8 +9,13 @@ import {
 	CardTitle,
 } from '@/components/ui/card';
 import { TeamView } from './team-view';
+import type { ActiveOrganization, Organization } from '@/hooks/use-organizations';
 
-export function TeamsTab({ organization }: { organization: any }) {
+export function TeamsTab({
+	organization,
+}: {
+	organization: Organization | ActiveOrganization;
+}) {
 	if (!(organization && organization.id)) {
 		return (
 			<div className="py-12 text-center">
