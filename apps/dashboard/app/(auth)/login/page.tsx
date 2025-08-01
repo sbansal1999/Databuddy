@@ -66,7 +66,7 @@ function LoginPage() {
 
 		setIsLoading(true);
 		try {
-			const result = await signIn.email({
+			await signIn.email({
 				email,
 				password,
 				callbackURL: '/home',
@@ -92,11 +92,6 @@ function LoginPage() {
 					},
 				},
 			});
-
-			if (result?.error) {
-				toast.error('Invalid credentials');
-				return;
-			}
 		} catch (_error) {
 			toast.error('Something went wrong');
 		} finally {
