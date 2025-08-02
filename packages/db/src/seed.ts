@@ -1,83 +1,181 @@
+import { randomUUID } from 'node:crypto';
+import { auth } from '@databuddy/auth';
 import { faker } from '@faker-js/faker';
+import { eq } from 'drizzle-orm';
 import { clickHouse, TABLE_NAMES } from './clickhouse/client';
+import { initClickHouseSchema } from './clickhouse/schema';
+import { db } from './client';
+import {
+	BLOG_CATEGORIES,
+	COMPANY_SECTIONS,
+	PRODUCT_CATEGORIES,
+	DEVICE_TYPES,
+	BROWSERS,
+	OS_NAMES,
+	CUSTOM_EVENTS,
+	REFERRERS,
+} from './constants';
+import {
+	account,
+	member,
+	organization,
+	user,
+	userPreferences,
+	websites,
+} from './drizzle/schema';
 
-const clientId = process.argv[2] || faker.string.uuid();
-const domain = process.argv[3] || 'example.com';
-const eventCount = Number(process.argv[4]) || 100;
+const generateSampleData = () => {
+	const userId1 = randomUUID();
+	const userId2 = randomUUID();
+	const orgId1 = randomUUID();
+	const orgId2 = randomUUID();
+	const websiteId1 = randomUUID();
+	const websiteId2 = randomUUID();
+	const websiteId3 = randomUUID();
 
-const BROWSERS = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'];
-const OS_NAMES = ['Windows', 'macOS', 'Linux', 'Android', 'iOS'];
-const DEVICE_TYPES = ['desktop', 'mobile', 'tablet'];
-// Custom events that would be tracked via track() calls
-const CUSTOM_EVENTS = [
-	'click',
-	'button_click',
-	'form_submit',
-	'signup',
-	'login',
-	'logout',
-	'purchase',
-	'add_to_cart',
-	'remove_from_cart',
-	'checkout_started',
-	'search',
-	'filter_applied',
-	'video_play',
-	'video_pause',
-	'download',
-	'newsletter_signup',
-	'contact_form',
-	'feature_toggle',
-	'share',
-	'error_occurred',
-	'api_call',
-	'user_interaction',
-];
+	const now = new Date().toISOString();
+	const daysAgo = (days: number) =>
+		new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-const BLOG_CATEGORIES = [
-	'tech',
-	'business',
-	'marketing',
-	'design',
-	'development',
-	'startup',
-	'ai',
-	'saas',
-	'mobile',
-	'web',
-	'data',
-	'security',
-	'cloud',
-	'api',
-	'tutorial',
-];
-const PRODUCT_CATEGORIES = [
-	'software',
-	'hardware',
-	'books',
-	'courses',
-	'templates',
-	'tools',
-	'services',
-	'consulting',
-	'hosting',
-	'analytics',
-];
-const COMPANY_SECTIONS = [
-	'about',
-	'team',
-	'careers',
-	'investors',
-	'press',
-	'contact',
-	'support',
-	'help',
-	'faq',
-	'terms',
-	'privacy',
-	'security',
-	'status',
-];
+	return {
+		users: [
+			{
+				id: userId1,
+				name: 'John Doe',
+				email: 'admin@databuddy.dev',
+				emailVerified: true,
+				firstName: 'John',
+				lastName: 'Doe',
+				status: 'ACTIVE' as const,
+				role: 'ADMIN' as const,
+				createdAt: daysAgo(30),
+				updatedAt: now,
+				twoFactorEnabled: false,
+			},
+			{
+				id: userId2,
+				name: 'Jane Smith',
+				email: 'user@databuddy.dev',
+				emailVerified: true,
+				firstName: 'Jane',
+				lastName: 'Smith',
+				status: 'ACTIVE' as const,
+				role: 'USER' as const,
+				createdAt: daysAgo(15),
+				updatedAt: now,
+				twoFactorEnabled: false,
+			},
+		],
+
+		organizations: [
+			{
+				id: orgId1,
+				name: 'Acme Corporation',
+				slug: 'acme-corp',
+				logo: null,
+				createdAt: daysAgo(25),
+				metadata: JSON.stringify({
+					industry: 'Technology',
+					size: 'Medium',
+				}),
+			},
+			{
+				id: orgId2,
+				name: 'StartupCo',
+				slug: 'startupco',
+				logo: null,
+				createdAt: daysAgo(10),
+				metadata: JSON.stringify({
+					industry: 'SaaS',
+					size: 'Small',
+				}),
+			},
+		],
+
+		members: [
+			{
+				id: randomUUID(),
+				organizationId: orgId1,
+				userId: userId1,
+				role: 'owner',
+				createdAt: daysAgo(25),
+			},
+			{
+				id: randomUUID(),
+				organizationId: orgId1,
+				userId: userId2,
+				role: 'member',
+				createdAt: daysAgo(20),
+			},
+			{
+				id: randomUUID(),
+				organizationId: orgId2,
+				userId: userId2,
+				role: 'owner',
+				createdAt: daysAgo(10),
+			},
+		],
+
+		websites: [
+			{
+				id: websiteId1,
+				domain: 'acme.com',
+				name: 'Acme Website',
+				status: 'ACTIVE' as const,
+				userId: userId1,
+				organizationId: orgId1,
+				isPublic: true,
+				createdAt: daysAgo(20),
+				updatedAt: now,
+			},
+			{
+				id: websiteId2,
+				domain: 'blog.acme.com',
+				name: 'Acme Blog',
+				status: 'ACTIVE' as const,
+				userId: null,
+				organizationId: orgId1,
+				isPublic: false,
+				createdAt: daysAgo(15),
+				updatedAt: now,
+			},
+			{
+				id: websiteId3,
+				domain: 'startupco.io',
+				name: 'StartupCo Landing',
+				status: 'ACTIVE' as const,
+				userId: userId2,
+				organizationId: orgId2,
+				isPublic: true,
+				createdAt: daysAgo(8),
+				updatedAt: now,
+			},
+		],
+
+		userPreferences: [
+			{
+				id: randomUUID(),
+				userId: userId1,
+				timezone: 'America/New_York',
+				dateFormat: 'MMM D, YYYY',
+				timeFormat: 'h:mm a',
+				createdAt: daysAgo(30),
+				updatedAt: now,
+			},
+			{
+				id: randomUUID(),
+				userId: userId2,
+				timezone: 'Europe/London',
+				dateFormat: 'DD/MM/YYYY',
+				timeFormat: 'HH:mm',
+				createdAt: daysAgo(15),
+				updatedAt: now,
+			},
+		],
+
+		websiteIds: [websiteId1, websiteId2, websiteId3],
+	};
+};
 
 function generatePaths() {
 	const paths = [
@@ -150,63 +248,6 @@ function generatePaths() {
 	}
 
 	return paths;
-}
-
-function generateReferrers() {
-	return [
-		'direct',
-		'https://google.com/search',
-		'https://www.google.com/search',
-		'https://bing.com/search',
-		'https://duckduckgo.com',
-		'https://yahoo.com/search',
-		'https://facebook.com',
-		'https://www.facebook.com',
-		'https://twitter.com',
-		'https://x.com',
-		'https://linkedin.com',
-		'https://www.linkedin.com',
-		'https://instagram.com',
-		'https://reddit.com',
-		'https://www.reddit.com',
-		'https://youtube.com',
-		'https://tiktok.com',
-		'https://github.com',
-		'https://stackoverflow.com',
-		'https://medium.com',
-		'https://dev.to',
-		'https://hackernews.com',
-		'https://producthunt.com',
-		'https://indiehackers.com',
-		'https://techcrunch.com',
-		'https://vercel.com',
-		'https://netlify.com',
-		'https://aws.amazon.com',
-		'https://cloud.google.com',
-		'https://azure.microsoft.com',
-		'https://digitalocean.com',
-		'https://heroku.com',
-		'https://railway.app',
-		'https://planetscale.com',
-		'https://supabase.com',
-		'https://clerk.com',
-		'https://auth0.com',
-		'https://stripe.com',
-		'https://paddle.com',
-		'https://lemonsqueezy.com',
-		'https://gumroad.com',
-		'https://mailchimp.com',
-		'https://convertkit.com',
-		'https://substack.com',
-		'https://notion.so',
-		'https://airtable.com',
-		'https://figma.com',
-		'https://canva.com',
-		'https://discord.com',
-		'https://slack.com',
-		'https://telegram.org',
-		'https://whatsapp.com',
-	];
 }
 
 function generateCustomProperties(eventName: string) {
@@ -378,71 +419,74 @@ function generatePageTitle(path: string): string {
 }
 
 const PATHS = generatePaths();
-const REFERRERS = generateReferrers();
 
-// Generate realistic user pools and sessions
-const UNIQUE_USERS = Math.max(10, Math.floor(eventCount / 8)); // ~8 events per user on average
-const SESSIONS_PER_USER = 2.5; // Average sessions per user
-const TOTAL_SESSIONS = Math.floor(UNIQUE_USERS * SESSIONS_PER_USER);
+function generateUserPool(uniqueUsers: number) {
+	return Array.from({ length: uniqueUsers }, () => ({
+		anonymousId: `anon_${faker.string.uuid()}`,
+		country: faker.location.countryCode(),
+		region: faker.location.state(),
+		city: faker.location.city(),
+		timezone: faker.helpers.arrayElement([
+			'America/New_York',
+			'Europe/London',
+			'Asia/Tokyo',
+			'Australia/Sydney',
+			'Pacific/Honolulu',
+		]),
+		language: faker.helpers.arrayElement([
+			'en-US',
+			'en-GB',
+			'fr-FR',
+			'de-DE',
+			'es-ES',
+			'pt-BR',
+			'ja-JP',
+		]),
+		deviceType: faker.helpers.arrayElement(DEVICE_TYPES),
+		browser: faker.helpers.arrayElement(BROWSERS),
+		os: faker.helpers.arrayElement(OS_NAMES),
+		screenResolution: `${faker.helpers.arrayElement([1920, 1366, 1440, 1280, 1024])}x${faker.helpers.arrayElement([1080, 768, 900, 720, 640])}`,
+	}));
+}
 
-// Pre-generate user pool
-const USER_POOL = Array.from({ length: UNIQUE_USERS }, () => ({
-	anonymousId: `anon_${faker.string.uuid()}`,
-	country: faker.location.countryCode(),
-	region: faker.location.state(),
-	city: faker.location.city(),
-	timezone: faker.helpers.arrayElement([
-		'America/New_York',
-		'Europe/London',
-		'Asia/Tokyo',
-		'Australia/Sydney',
-		'Pacific/Honolulu',
-	]),
-	language: faker.helpers.arrayElement([
-		'en-US',
-		'en-GB',
-		'fr-FR',
-		'de-DE',
-		'es-ES',
-		'pt-BR',
-		'ja-JP',
-	]),
-	deviceType: faker.helpers.arrayElement(DEVICE_TYPES),
-	browser: faker.helpers.arrayElement(BROWSERS),
-	os: faker.helpers.arrayElement(OS_NAMES),
-	screenResolution: `${faker.helpers.arrayElement([1920, 1366, 1440, 1280, 1024])}x${faker.helpers.arrayElement([1080, 768, 900, 720, 640])}`,
-}));
+function generateSessionPool(userPool: UserPool, totalSessions: number) {
+	return Array.from({ length: totalSessions }, () => {
+		const currentUser = faker.helpers.arrayElement(userPool);
+		const sessionStartTime = faker.date.recent({ days: 30 }).getTime();
+		return {
+			sessionId: `sess_${faker.string.uuid()}`,
+			anonymousId: currentUser.anonymousId,
+			sessionStartTime,
+			user: currentUser,
+			eventsInSession: faker.number.int({ min: 1, max: 15 }), // 1-15 events per session
+			referrer: faker.helpers.arrayElement(REFERRERS),
+		};
+	});
+}
 
-// Pre-generate session pool
-const SESSION_POOL = Array.from({ length: TOTAL_SESSIONS }, () => {
-	const user = faker.helpers.arrayElement(USER_POOL);
-	const sessionStartTime = faker.date.recent({ days: 30 }).getTime();
-	return {
-		sessionId: `sess_${faker.string.uuid()}`,
-		anonymousId: user.anonymousId,
-		sessionStartTime,
-		user,
-		eventsInSession: faker.number.int({ min: 1, max: 15 }), // 1-15 events per session
-		referrer: faker.helpers.arrayElement(REFERRERS),
-	};
-});
+type UserPool = ReturnType<typeof generateUserPool>;
+type SessionPool = ReturnType<typeof generateSessionPool>;
+type Event = ReturnType<typeof createSingleEvent>;
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Seed script needs comprehensive data generation
 function createSingleEvent(
 	client: string,
 	websiteDomain: string,
-	eventIndex = 0
+	eventIndex: number,
+	eventCount: number,
+	totalSessions: number,
+	sessionPool: SessionPool
 ) {
 	// Pick a session based on event distribution
-	const sessionIndex = Math.floor(eventIndex / (eventCount / TOTAL_SESSIONS));
-	const session = SESSION_POOL[Math.min(sessionIndex, SESSION_POOL.length - 1)];
-	const user = session.user;
+	const sessionIndex = Math.floor(eventIndex / (eventCount / totalSessions));
+	const session = sessionPool[Math.min(sessionIndex, sessionPool.length - 1)];
+	const currentUser = session.user;
 
 	// Generate event time within session (sessions can span up to 2 hours)
 	const maxSessionDuration = 2 * 60 * 60 * 1000; // 2 hours
 	const sessionProgress =
-		(eventIndex % Math.ceil(eventCount / TOTAL_SESSIONS)) /
-		Math.ceil(eventCount / TOTAL_SESSIONS);
+		(eventIndex % Math.ceil(eventCount / totalSessions)) /
+		Math.ceil(eventCount / totalSessions);
 	const baseTime =
 		session.sessionStartTime + sessionProgress * maxSessionDuration;
 
@@ -483,24 +527,24 @@ function createSingleEvent(
 		title: generatePageTitle(path),
 		ip: faker.internet.ip(),
 		user_agent: faker.internet.userAgent(),
-		browser_name: user.browser,
+		browser_name: currentUser.browser,
 		browser_version: faker.system.semver(),
-		os_name: user.os,
+		os_name: currentUser.os,
 		os_version: faker.system.semver(),
-		device_type: user.deviceType,
+		device_type: currentUser.deviceType,
 		device_brand:
-			user.deviceType === 'mobile'
+			currentUser.deviceType === 'mobile'
 				? faker.helpers.arrayElement(['Apple', 'Samsung', 'Google'])
 				: null,
 		device_model:
-			user.deviceType === 'mobile' ? faker.commerce.productName() : null,
-		country: user.country,
-		region: user.region,
-		city: user.city,
-		screen_resolution: user.screenResolution,
+			currentUser.deviceType === 'mobile' ? faker.commerce.productName() : null,
+		country: currentUser.country,
+		region: currentUser.region,
+		city: currentUser.city,
+		screen_resolution: currentUser.screenResolution,
 		viewport_size: `${faker.number.int({ min: 800, max: 1920 })}x${faker.number.int({ min: 600, max: 1080 })}`,
-		language: user.language,
-		timezone: user.timezone,
+		language: currentUser.language,
+		timezone: currentUser.timezone,
 		connection_type: faker.helpers.arrayElement([
 			'wifi',
 			'4g',
@@ -642,26 +686,209 @@ function createSingleEvent(
 	};
 }
 
-(async () => {
-	console.log(
-		`Generating ${eventCount} events for client: ${clientId} on domain: ${domain}`
-	);
-	console.log(
-		`Creating realistic journeys: ${UNIQUE_USERS} users across ${TOTAL_SESSIONS} sessions`
-	);
+const generateClickHouseEvents = (websiteIds: string[]) => {
+	const eventCount = 30 * 150;
+	const uniqueUsers = Math.max(10, Math.floor(eventCount / 8)); // ~8 events per user on average
+	const sessionsPerUser = 2.5; // Average sessions per user
+	const totalSessions = Math.floor(uniqueUsers * sessionsPerUser);
+	const userPool = generateUserPool(uniqueUsers);
+	const sessionPool = generateSessionPool(userPool, totalSessions);
 
-	const events = Array.from({ length: eventCount }, (_, index) =>
-		createSingleEvent(clientId, domain, index)
-	);
+	const events: Event[] = [];
 
-	// Sort events by time to ensure chronological order
-	events.sort((a, b) => a.time - b.time);
-
-	await clickHouse.insert({
-		table: TABLE_NAMES.events,
-		format: 'JSONEachRow',
-		values: events,
+	Array.from({ length: eventCount }).forEach((_, index) => {
+		const websiteId = websiteIds[Math.floor(Math.random() * websiteIds.length)];
+		const event = createSingleEvent(
+			websiteId,
+			'example.com',
+			index,
+			eventCount,
+			totalSessions,
+			sessionPool
+		);
+		events.push(event);
 	});
 
-	console.log(`Inserted ${events.length} events for client ${clientId}`);
-})();
+	events.sort((a, b) => a.time - b.time);
+
+	return events;
+};
+
+async function seedPostgreSQL() {
+	console.log('Seeding PostgreSQL...');
+
+	const data = generateSampleData();
+
+	try {
+		console.log('Creating users with Better Auth...');
+
+		const adminResult = await auth.api.signUpEmail({
+			body: {
+				name: 'John Doe',
+				email: 'admin@databuddy.dev',
+				password: 'password123',
+			},
+		});
+
+		const userResult = await auth.api.signUpEmail({
+			body: {
+				name: 'Jane Smith',
+				email: 'user@databuddy.dev',
+				password: 'password123',
+			},
+		});
+
+		if (!adminResult) {
+			throw new Error('Failed to create admin user via Better Auth');
+		}
+		if (!userResult) {
+			throw new Error('Failed to create regular user via Better Auth');
+		}
+
+		console.log('Updating user roles...');
+		await db
+			.update(user)
+			.set({
+				role: 'ADMIN',
+				firstName: 'John',
+				lastName: 'Doe',
+				emailVerified: true,
+			})
+			.where(eq(user.email, 'admin@databuddy.dev'));
+
+		await db
+			.update(user)
+			.set({
+				role: 'USER',
+				firstName: 'Jane',
+				lastName: 'Smith',
+				emailVerified: true,
+			})
+			.where(eq(user.email, 'user@databuddy.dev'));
+
+		const adminUser = await db.query.user.findFirst({
+			where: eq(user.email, 'admin@databuddy.dev'),
+		});
+		const regularUser = await db.query.user.findFirst({
+			where: eq(user.email, 'user@databuddy.dev'),
+		});
+
+		if (!adminUser) {
+			throw new Error('Admin user not found after creation');
+		}
+		if (!regularUser) {
+			throw new Error('Regular user not found after creation');
+		}
+
+		const userId1 = adminUser.id;
+		const userId2 = regularUser.id;
+
+		console.log('Creating organizations...');
+		await db.insert(organization).values(data.organizations);
+
+		console.log('Creating organization members...');
+		const updatedMembers = data.members.map((memberData) => ({
+			...memberData,
+			userId: memberData.userId === data.users[0].id ? userId1 : userId2,
+		}));
+		await db.insert(member).values(updatedMembers);
+
+		console.log('Creating websites...');
+		const updatedWebsites = data.websites.map((website) => {
+			if (website.userId === data.users[0].id) {
+				return { ...website, userId: userId1 };
+			}
+			if (website.userId === data.users[1].id) {
+				return { ...website, userId: userId2 };
+			}
+			return { ...website, userId: null };
+		});
+		await db.insert(websites).values(updatedWebsites);
+
+		console.log('Creating user preferences...');
+		const updatedPreferences = data.userPreferences.map((pref) => ({
+			...pref,
+			userId: pref.userId === data.users[0].id ? userId1 : userId2,
+		}));
+		await db.insert(userPreferences).values(updatedPreferences);
+
+		console.log('PostgreSQL seeding completed successfully!');
+		return data.websiteIds;
+	} catch (error) {
+		console.error('Error seeding PostgreSQL:', error);
+		throw error;
+	}
+}
+
+async function seedClickHouse(websiteIds: string[]) {
+	console.log('Seeding ClickHouse...');
+
+	try {
+		console.log('Initializing ClickHouse schema...');
+		const schemaResult = await initClickHouseSchema();
+		if (!schemaResult.success) {
+			throw new Error(`Schema initialization failed: ${schemaResult.message}`);
+		}
+
+		console.log('Generating sample events...');
+		const events = generateClickHouseEvents(websiteIds);
+
+		console.log(`Inserting ${events.length} events...`);
+
+		await clickHouse.insert({
+			table: TABLE_NAMES.events,
+			format: 'JSONEachRow',
+			values: events,
+		});
+
+		console.log('ClickHouse seeding completed successfully!');
+	} catch (error) {
+		console.error('Error seeding ClickHouse:', error);
+		throw error;
+	}
+}
+
+async function seedDatabase() {
+	console.log('Starting database seeding...\n');
+
+	try {
+		await db.delete(websites);
+		await db.delete(account);
+		await db.delete(member);
+		await db.delete(userPreferences);
+		await db.delete(user);
+		await db.delete(organization);
+
+		const websiteIds = await seedPostgreSQL();
+
+		try {
+			await seedClickHouse(websiteIds);
+		} catch {
+			console.log('ClickHouse seeding skipped (service not available)');
+		}
+
+		console.log('\nDatabase seeding completed successfully!');
+		console.log('\nCreated test accounts:');
+		console.log('  Admin: admin@databuddy.dev / password123');
+		console.log('  User:  user@databuddy.dev / password123');
+		console.log('\nCreated websites:');
+		console.log('  - acme.com (Acme Corporation)');
+		console.log('  - blog.acme.com (Acme Corporation)');
+		console.log('  - startupco.io (StartupCo)');
+		console.log(
+			'\nAnalytics data will be available once ClickHouse is running'
+		);
+	} catch (error) {
+		console.error('\nSeeding failed:', error);
+		process.exit(1);
+	}
+}
+
+seedDatabase()
+	.then(() => {
+		process.exit(0);
+	})
+	.catch((error) => {
+		console.error('Seeding error:', error);
+		process.exit(1);
+	});
