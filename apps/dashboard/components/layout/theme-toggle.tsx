@@ -84,7 +84,7 @@ export function ThemeToggle({ className }: ThemeTogglerProps) {
 				>
 					<SunIcon
 						className={cn(
-							"size-5 transition-all duration-300",
+							"absolute size-5 transition-all duration-300",
 							currentTheme === "light"
 								? "rotate-0 scale-100"
 								: "-rotate-90 scale-0"
