@@ -711,6 +711,11 @@ export async function initClickHouseSchema() {
 		});
 		console.info(`Created database: ${UPTIME_DATABASE}`);
 
+		await clickHouse.command({
+			query: `CREATE DATABASE IF NOT EXISTS ${OBSERVABILITY_DATABASE}`,
+		});
+		console.info(`Created database: ${OBSERVABILITY_DATABASE}`);
+
 		// Create base tables first
 		const tables = [
 			{ name: "events", query: CREATE_EVENTS_TABLE },
