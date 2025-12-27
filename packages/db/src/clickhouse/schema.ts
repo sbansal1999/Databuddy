@@ -1,15 +1,13 @@
 import { clickHouse } from "./client";
 
-const ANALYTICS_DATABASE = "analytics";
-const UPTIME_DATABASE = "uptime";
-const OBSERVABILITY_DATABASE = "observability";
-
-const CREATE_DATABASE = `
-CREATE DATABASE IF NOT EXISTS ${ANALYTICS_DATABASE}
-`;
+const DATABASES = {
+	ANALYTICS: "analytics",
+	UPTIME: "uptime",
+	OBSERVABILITY: "observability",
+} as const;
 
 const CREATE_EVENTS_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.events (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.events (
   id UUID,
   client_id String,
   event_name String,
@@ -84,7 +82,7 @@ SETTINGS index_granularity = 8192
  * No geo/UA enrichment, just the error data
  */
 const CREATE_ERROR_SPANS_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.error_spans (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.error_spans (
   client_id String CODEC(ZSTD(1)),
   anonymous_id String CODEC(ZSTD(1)),
   session_id String CODEC(ZSTD(1)),
@@ -112,7 +110,7 @@ SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
  * Hourly aggregated error stats
  */
 const CREATE_ERROR_HOURLY_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.error_hourly (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.error_hourly (
   client_id String CODEC(ZSTD(1)),
   path String CODEC(ZSTD(1)),
   error_type LowCardinality(String) CODEC(ZSTD(1)),
@@ -134,8 +132,8 @@ SETTINGS index_granularity = 8192
  * Materialized view for error hourly aggregation
  */
 const CREATE_ERROR_HOURLY_MV = `
-CREATE MATERIALIZED VIEW IF NOT EXISTS ${ANALYTICS_DATABASE}.error_hourly_mv
-TO ${ANALYTICS_DATABASE}.error_hourly
+CREATE MATERIALIZED VIEW IF NOT EXISTS ${DATABASES.ANALYTICS}.error_hourly_mv
+TO ${DATABASES.ANALYTICS}.error_hourly
 AS SELECT
   client_id,
   path,
@@ -146,7 +144,7 @@ AS SELECT
   uniqState(anonymous_id) AS affected_users,
   uniqState(session_id) AS affected_sessions,
   any(message) AS sample_message
-FROM ${ANALYTICS_DATABASE}.error_spans
+FROM ${DATABASES.ANALYTICS}.error_spans
 GROUP BY client_id, path, error_type, message_hash, hour
 `;
 
@@ -162,7 +160,7 @@ GROUP BY client_id, path, error_type, message_hash, hour
  * - FPS: good > 55, poor < 30
  */
 const CREATE_WEB_VITALS_SPANS_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.web_vitals_spans (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.web_vitals_spans (
   client_id String CODEC(ZSTD(1)),
   anonymous_id String CODEC(ZSTD(1)),
   session_id String CODEC(ZSTD(1)),
@@ -185,7 +183,7 @@ SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
  * Hourly aggregated Web Vitals
  */
 const CREATE_WEB_VITALS_HOURLY_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.web_vitals_hourly (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.web_vitals_hourly (
   client_id String CODEC(ZSTD(1)),
   path String CODEC(ZSTD(1)),
   metric_name LowCardinality(String) CODEC(ZSTD(1)),
@@ -208,8 +206,8 @@ SETTINGS index_granularity = 8192
  * Materialized view for Web Vitals hourly aggregation
  */
 const CREATE_WEB_VITALS_HOURLY_MV = `
-CREATE MATERIALIZED VIEW IF NOT EXISTS ${ANALYTICS_DATABASE}.web_vitals_hourly_mv
-TO ${ANALYTICS_DATABASE}.web_vitals_hourly
+CREATE MATERIALIZED VIEW IF NOT EXISTS ${DATABASES.ANALYTICS}.web_vitals_hourly_mv
+TO ${DATABASES.ANALYTICS}.web_vitals_hourly
 AS SELECT
   client_id,
   path,
@@ -221,12 +219,12 @@ AS SELECT
   avg(metric_value) AS avg_value,
   min(metric_value) AS min_value,
   max(metric_value) AS max_value
-FROM ${ANALYTICS_DATABASE}.web_vitals_spans
+FROM ${DATABASES.ANALYTICS}.web_vitals_spans
 GROUP BY client_id, path, metric_name, hour
 `;
 
 const CREATE_BLOCKED_TRAFFIC_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.blocked_traffic (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.blocked_traffic (
   id UUID,
   client_id String,
   timestamp DateTime64(3, 'UTC'),
@@ -265,7 +263,7 @@ SETTINGS index_granularity = 8192
 `;
 
 const CREATE_EMAIL_EVENTS_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.email_events (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.email_events (
     event_id UUID DEFAULT generateUUIDv4(),
     email_hash String,
     domain String,
@@ -285,7 +283,7 @@ SETTINGS index_granularity = 8192
  * Uses JSON for flexible metadata
  */
 const CREATE_CUSTOM_EVENT_SPANS_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.custom_event_spans (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.custom_event_spans (
   client_id String CODEC(ZSTD(1)),
   anonymous_id String CODEC(ZSTD(1)),
   session_id String CODEC(ZSTD(1)),
@@ -308,7 +306,7 @@ SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
  * Hourly aggregated custom events
  */
 const CREATE_CUSTOM_EVENTS_HOURLY_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.custom_events_hourly (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.custom_events_hourly (
   client_id String CODEC(ZSTD(1)),
   path String CODEC(ZSTD(1)),
   event_name LowCardinality(String) CODEC(ZSTD(1)),
@@ -328,8 +326,8 @@ SETTINGS index_granularity = 8192
  * Materialized view for custom events hourly aggregation
  */
 const CREATE_CUSTOM_EVENTS_HOURLY_MV = `
-CREATE MATERIALIZED VIEW IF NOT EXISTS ${ANALYTICS_DATABASE}.custom_events_hourly_mv
-TO ${ANALYTICS_DATABASE}.custom_events_hourly
+CREATE MATERIALIZED VIEW IF NOT EXISTS ${DATABASES.ANALYTICS}.custom_events_hourly_mv
+TO ${DATABASES.ANALYTICS}.custom_events_hourly
 AS SELECT
   client_id,
   path,
@@ -338,12 +336,12 @@ AS SELECT
   count() AS event_count,
   uniqState(anonymous_id) AS unique_users,
   uniqState(session_id) AS unique_sessions
-FROM ${ANALYTICS_DATABASE}.custom_event_spans
+FROM ${DATABASES.ANALYTICS}.custom_event_spans
 GROUP BY client_id, path, event_name, hour
 `;
 
 const CREATE_CUSTOM_OUTGOING_LINKS_TABLE = `
-CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.outgoing_links (
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.outgoing_links (
   id UUID,
   client_id String,
   anonymous_id String,
@@ -363,7 +361,7 @@ SETTINGS index_granularity = 8192
  * Lean AI call spans table - stores individual AI model calls
  */
 const CREATE_AI_CALL_SPANS_TABLE = `
-CREATE TABLE IF NOT EXISTS ${OBSERVABILITY_DATABASE}.ai_call_spans (
+CREATE TABLE IF NOT EXISTS ${DATABASES.OBSERVABILITY}.ai_call_spans (
   website_id String CODEC(ZSTD(1)),
   user_id Nullable(String) CODEC(ZSTD(1)),
   
@@ -404,7 +402,7 @@ SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
 `;
 
 const CREATE_UPTIME_TABLE = `
-CREATE TABLE IF NOT EXISTS ${UPTIME_DATABASE}.uptime_monitor (
+CREATE TABLE IF NOT EXISTS ${DATABASES.UPTIME}.uptime_monitor (
     site_id String CODEC(ZSTD(1)),
     url String CODEC(ZSTD(1)),
     timestamp DateTime64(3, 'UTC') CODEC(Delta(8), ZSTD(1)),
@@ -701,20 +699,12 @@ export async function initClickHouseSchema() {
 	try {
 		console.info("Initializing ClickHouse schema...");
 
-		await clickHouse.command({
-			query: CREATE_DATABASE,
-		});
-		console.info(`Created database: ${ANALYTICS_DATABASE}`);
-
-		await clickHouse.command({
-			query: `CREATE DATABASE IF NOT EXISTS ${UPTIME_DATABASE}`,
-		});
-		console.info(`Created database: ${UPTIME_DATABASE}`);
-
-		await clickHouse.command({
-			query: `CREATE DATABASE IF NOT EXISTS ${OBSERVABILITY_DATABASE}`,
-		});
-		console.info(`Created database: ${OBSERVABILITY_DATABASE}`);
+		for (const database of Object.values(DATABASES)) {
+			await clickHouse.command({
+				query: `CREATE DATABASE IF NOT EXISTS ${database}`,
+			});
+			console.info(`Created database: ${database}`);
+		}
 
 		// Create base tables first
 		const tables = [
@@ -752,20 +742,20 @@ export async function initClickHouseSchema() {
 		// Create base tables
 		for (const table of tables) {
 			await clickHouse.command({ query: table.query });
-			console.info(`Created table: ${ANALYTICS_DATABASE}.${table.name}`);
+			console.info(`Created table: ${DATABASES.ANALYTICS}.${table.name}`);
 		}
 
 		// Create uptime tables
 		for (const table of uptimeTables) {
 			await clickHouse.command({ query: table.query });
-			console.info(`Created table: ${UPTIME_DATABASE}.${table.name}`);
+			console.info(`Created table: ${DATABASES.UPTIME}.${table.name}`);
 		}
 
 		// Create materialized views (after target tables exist)
 		for (const mv of materializedViews) {
 			await clickHouse.command({ query: mv.query });
 			console.info(
-				`Created materialized view: ${ANALYTICS_DATABASE}.${mv.name}`
+				`Created materialized view: ${DATABASES.ANALYTICS}.${mv.name}`
 			);
 		}
 
@@ -774,10 +764,10 @@ export async function initClickHouseSchema() {
 			success: true,
 			message: "ClickHouse schema initialized successfully",
 			details: {
-				database: ANALYTICS_DATABASE,
+				database: DATABASES.ANALYTICS,
 				tables: tables.map((t) => t.name),
 				materialized_views: materializedViews.map((mv) => mv.name),
-				uptime_database: UPTIME_DATABASE,
+				uptime_database: DATABASES.UPTIME,
 				uptime_tables: uptimeTables.map((t) => t.name),
 			},
 		};
