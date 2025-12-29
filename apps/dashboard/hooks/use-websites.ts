@@ -4,7 +4,6 @@ import type { InferSelectModel, websites } from "@databuddy/db";
 import type { ProcessedMiniChartData } from "@databuddy/shared/types/website";
 import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { useOrganizationsContext } from "@/components/providers/organizations-provider";
 import { orpc } from "@/lib/orpc";
 
@@ -121,7 +120,6 @@ export function useCreateWebsite() {
 			queryClient.setQueryData<WebsitesListData>(listKey, (old) =>
 				addWebsiteToList(old, newWebsite)
 			);
-			toast.success("Website created successfully");
 		},
 	});
 }
@@ -147,7 +145,6 @@ export function useUpdateWebsite() {
 		...orpc.websites.update.mutationOptions(),
 		onSuccess: (updatedWebsite: Website) => {
 			updateWebsiteCache(queryClient, updatedWebsite);
-			toast.success("Website updated successfully");
 		},
 	});
 }
@@ -182,7 +179,6 @@ export function useDeleteWebsite() {
 		onSuccess: (_data, { id }) => {
 			const getByIdKey = getWebsiteByIdKey(id);
 			queryClient.setQueryData(getByIdKey, undefined);
-			toast.success("Website deleted successfully");
 		},
 	});
 }
