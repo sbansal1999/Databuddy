@@ -22,7 +22,7 @@ import { orpc } from "@/lib/orpc";
 function SkeletonRow() {
 	return (
 		<div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4">
-			<Skeleton className="h-10 w-10 rounded" />
+			<Skeleton className="size-10 rounded" />
 			<div className="space-y-2">
 				<Skeleton className="h-4 w-32" />
 				<Skeleton className="h-3 w-48" />
@@ -52,7 +52,7 @@ function WebsitesSkeleton() {
 function ErrorState({ onRetry }: { onRetry: () => void }) {
 	return (
 		<div className="flex h-full flex-col items-center justify-center p-8 text-center">
-			<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+			<div className="mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
 				<GlobeIcon className="text-destructive" size={28} weight="duotone" />
 			</div>
 			<h3 className="mb-1 font-semibold text-lg">Failed to load</h3>
@@ -79,10 +79,10 @@ function WebsiteRow({ website }: WebsiteRowProps) {
 		>
 			<FaviconImage
 				altText={`${website.name} favicon`}
-				className="h-10 w-10"
+				className="size-10"
 				domain={website.domain}
 				fallbackIcon={
-					<div className="flex h-10 w-10 items-center justify-center rounded border bg-background group-hover:border-primary/30 group-hover:bg-primary/5">
+					<div className="flex size-10 items-center justify-center rounded border bg-background group-hover:border-primary/30 group-hover:bg-primary/5">
 						<GlobeIcon
 							className="text-muted-foreground group-hover:text-primary"
 							size={18}

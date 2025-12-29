@@ -35,7 +35,7 @@ type SSOProviderDisplay = {
 function SkeletonRow() {
 	return (
 		<div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4">
-			<Skeleton className="h-10 w-10 rounded" />
+			<Skeleton className="size-10 rounded" />
 			<div className="space-y-2">
 				<Skeleton className="h-4 w-32" />
 				<Skeleton className="h-3 w-48" />
@@ -65,7 +65,7 @@ function SSOSkeleton() {
 function ErrorState({ onRetry }: { onRetry: () => void }) {
 	return (
 		<div className="flex h-full flex-col items-center justify-center p-8 text-center">
-			<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+			<div className="mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
 				<FingerprintIcon
 					className="text-destructive"
 					size={28}

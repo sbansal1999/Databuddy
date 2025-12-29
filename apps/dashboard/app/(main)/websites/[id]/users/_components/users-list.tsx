@@ -376,7 +376,7 @@ export function UsersList({ websiteId }: UsersListProps) {
 				/>
 
 				<div className="flex min-h-0 flex-1 flex-col items-center justify-center py-24 text-center text-muted-foreground">
-					<UsersIcon className="mb-4 h-12 w-12 opacity-50" />
+					<UsersIcon className="mb-4 size-12 opacity-50" />
 					<p className="mb-2 font-medium text-lg">Failed to load users</p>
 					<p className="text-sm">
 						{error?.message || "There was an error loading the users"}

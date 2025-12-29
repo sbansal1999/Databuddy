@@ -73,7 +73,7 @@ export const MetricToggle: React.FC<MetricToggleProps> = ({
 		>
 			<div
 				className={cn(
-					"h-2.5 w-2.5 rounded-full transition-all duration-200",
+					"size-2.5 rounded-full transition-all duration-200",
 					checked
 						? "scale-100 shadow-sm"
 						: "scale-75 opacity-50 group-hover:scale-90 group-hover:opacity-75"

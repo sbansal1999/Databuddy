@@ -20,7 +20,7 @@ type ApiKeySettingsProps = {
 function SkeletonRow() {
 	return (
 		<div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 px-5 py-4">
-			<Skeleton className="h-10 w-10 rounded" />
+			<Skeleton className="size-10 rounded" />
 			<div className="space-y-2">
 				<Skeleton className="h-4 w-32" />
 				<Skeleton className="h-3 w-48" />

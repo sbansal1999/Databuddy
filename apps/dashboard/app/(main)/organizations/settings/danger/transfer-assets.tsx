@@ -75,7 +75,7 @@ function LoadingSkeleton() {
 				<Skeleton className="h-12 w-full" />
 			</div>
 			<div className="flex items-center justify-center">
-				<Skeleton className="h-9 w-9 rounded" />
+				<Skeleton className="size-9 rounded" />
 			</div>
 			<div className="space-y-2">
 				<Skeleton className="h-4 w-40" />
@@ -188,7 +188,7 @@ export function TransferAssets({ organizationId }: TransferAssetsProps) {
 			{/* Transfer Button */}
 			<div className="flex items-center justify-center">
 				<Button
-					className="h-9 w-9"
+					className="size-9"
 					disabled={!selectedSide || isTransferring}
 					onClick={handleTransfer}
 					size="icon"

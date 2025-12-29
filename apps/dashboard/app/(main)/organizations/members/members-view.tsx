@@ -20,7 +20,7 @@ import { MemberList } from "./member-list";
 function SkeletonRow() {
 	return (
 		<div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 px-5 py-4">
-			<Skeleton className="h-10 w-10 rounded-full" />
+			<Skeleton className="size-10 rounded-full" />
 			<div className="space-y-2">
 				<Skeleton className="h-4 w-32" />
 				<Skeleton className="h-3 w-48" />
@@ -52,7 +52,7 @@ function MembersSkeleton() {
 function EmptyState() {
 	return (
 		<div className="flex h-full flex-col items-center justify-center p-8 text-center">
-			<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+			<div className="mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10">
 				<UsersIcon className="text-primary" size={28} weight="duotone" />
 			</div>
 			<h3 className="mb-1 font-semibold text-lg">No team members yet</h3>
@@ -66,7 +66,7 @@ function EmptyState() {
 function ErrorState({ onRetry }: { onRetry: () => void }) {
 	return (
 		<div className="flex h-full flex-col items-center justify-center p-8 text-center">
-			<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+			<div className="mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
 				<UsersIcon className="text-destructive" size={28} weight="duotone" />
 			</div>
 			<h3 className="mb-1 font-semibold text-lg">Failed to load</h3>

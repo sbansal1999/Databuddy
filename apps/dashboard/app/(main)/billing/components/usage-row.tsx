@@ -67,7 +67,7 @@ export const UsageRow = memo(function UsageRowComponent({
 		<div className="px-5 py-4">
 			<div className="mb-3 flex items-center justify-between">
 				<div className="flex items-center gap-3">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded border bg-background">
+					<div className="flex size-10 shrink-0 items-center justify-center rounded border bg-background">
 						<Icon
 							className="text-muted-foreground"
 							size={18}

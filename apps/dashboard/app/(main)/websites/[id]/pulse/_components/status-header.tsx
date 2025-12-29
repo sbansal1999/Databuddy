@@ -178,7 +178,7 @@ export function StatusHeader({
 					</Button>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button className="h-8 w-8" size="icon" variant="ghost">
+							<Button className="size-8" size="icon" variant="ghost">
 								<CircleIcon className="size-4" weight="bold" />
 								<span className="sr-only">More options</span>
 							</Button>

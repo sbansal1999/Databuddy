@@ -149,7 +149,7 @@ export default function AcceptInvitationPage() {
 					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
 						<div className="relative mb-8">
 							<div className="rounded-full border bg-muted/50 p-8">
-								<CircleNotch className="h-16 w-16 animate-spin text-primary" />
+								<CircleNotch className="size-16 animate-spin text-primary" />
 							</div>
 						</div>
 						<h3 className="mb-4 font-bold text-2xl">Loading Invitation</h3>
@@ -165,7 +165,7 @@ export default function AcceptInvitationPage() {
 						<div className="relative mb-8">
 							<div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
 							<div className="relative rounded-full border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-6">
-								<UserPlus className="h-12 w-12 text-primary" weight="duotone" />
+								<UserPlus className="size-12 text-primary" weight="duotone" />
 							</div>
 							<Sparkle
 								className="absolute -top-2 -right-2 size-6 animate-pulse text-primary/60"
@@ -263,7 +263,7 @@ export default function AcceptInvitationPage() {
 					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
 						<div className="relative mb-8">
 							<div className="rounded-full border border-accent bg-accent/50 p-8">
-								<CircleNotch className="h-16 w-16 animate-spin text-primary" />
+								<CircleNotch className="size-16 animate-spin text-primary" />
 							</div>
 						</div>
 						<h3 className="mb-4 font-bold text-2xl">Joining Organization</h3>
@@ -284,7 +284,7 @@ export default function AcceptInvitationPage() {
 							<div className="absolute inset-0 animate-pulse rounded-full bg-green-500/20 blur-xl" />
 							<div className="relative rounded-full border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-6">
 								<CheckCircle
-									className="h-12 w-12 text-green-600"
+									className="size-12 text-green-600"
 									weight="duotone"
 								/>
 							</div>
@@ -337,7 +337,7 @@ export default function AcceptInvitationPage() {
 						<div className="relative mb-8">
 							<div className="rounded-full border border-blue-500/20 bg-blue-500/10 p-8">
 								<CheckCircle
-									className="h-16 w-16 text-foreground"
+									className="size-16 text-foreground"
 									weight="duotone"
 								/>
 							</div>
@@ -370,7 +370,7 @@ export default function AcceptInvitationPage() {
 					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
 						<div className="relative mb-8">
 							<div className="rounded-full border border-red-500/20 bg-red-500/10 p-8">
-								<XCircle className="h-16 w-16 text-red-600" weight="duotone" />
+								<XCircle className="size-16 text-red-600" weight="duotone" />
 							</div>
 						</div>
 
@@ -401,7 +401,7 @@ export default function AcceptInvitationPage() {
 					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
 						<div className="relative mb-8">
 							<div className="rounded-full border border-red-500/20 bg-red-500/10 p-8">
-								<XCircle className="h-16 w-16 text-red-600" weight="duotone" />
+								<XCircle className="size-16 text-red-600" weight="duotone" />
 							</div>
 						</div>
 

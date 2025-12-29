@@ -73,7 +73,7 @@ export function AgentInput() {
 
 						{isLoading ? (
 							<Button
-								className="h-12 w-12 shrink-0"
+								className="size-12 shrink-0"
 								onClick={handleStop}
 								size="icon"
 								title="Stop generation"
@@ -84,7 +84,7 @@ export function AgentInput() {
 							</Button>
 						) : (
 							<Button
-								className="h-12 w-12 shrink-0"
+								className="size-12 shrink-0"
 								disabled={!input.trim()}
 								size="icon"
 								title="Send message"

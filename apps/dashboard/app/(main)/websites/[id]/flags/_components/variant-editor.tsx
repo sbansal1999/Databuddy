@@ -198,7 +198,7 @@ export function VariantEditor({
 						type="button"
 						variant="outline"
 					>
-						<PlusIcon className="mr-2 h-3 w-3" />
+						<PlusIcon className="mr-2 size-3" />
 						Add Variant
 					</Button>
 				</div>
@@ -240,14 +240,14 @@ export function VariantEditor({
 								</div>
 							</div>
 							<Button
-								className="h-8 w-8 text-muted-foreground hover:text-destructive"
+								className="size-8 text-muted-foreground hover:text-destructive"
 								disabled={variants.length <= 1}
 								onClick={() => handleRemoveVariant(index)}
 								size="icon"
 								type="button"
 								variant="ghost"
 							>
-								<TrashIcon className="h-4 w-4" />
+								<TrashIcon className="size-4" />
 							</Button>
 						</div>
 
@@ -280,7 +280,7 @@ export function VariantEditor({
 				}`}
 			>
 				<div
-					className={`h-2 w-2 rounded-full ${
+					className={`size-2 rounded-full ${
 						totalWeight === 0
 							? "bg-blue-600"
 							: isValidTotal

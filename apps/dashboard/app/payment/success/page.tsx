@@ -14,7 +14,7 @@ export default function PaymentSuccess() {
 
 			<div className="flex w-full max-w-md flex-col items-center">
 				<CheckCircle
-					className="mb-4 h-20 w-20 text-green-500"
+					className="mb-4 size-20 text-green-500"
 					weight="duotone"
 				/>
 				<h1 className="mb-2 text-center font-bold text-2xl md:text-3xl">
@@ -39,8 +39,8 @@ export default function PaymentSuccess() {
 			</div>
 
 			<div className="pointer-events-none absolute inset-0 overflow-hidden opacity-5">
-				<div className="absolute -top-24 -right-24 h-96 w-96 rounded-full border-8 border-green-500 border-dashed" />
-				<div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full border-8 border-green-500 border-dashed" />
+				<div className="absolute -top-24 -right-24 size-96 rounded-full border-8 border-green-500 border-dashed" />
+				<div className="absolute -bottom-24 -left-24 size-96 rounded-full border-8 border-green-500 border-dashed" />
 			</div>
 		</div>
 	);

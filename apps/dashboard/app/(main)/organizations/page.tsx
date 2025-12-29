@@ -8,7 +8,7 @@ import { OrganizationsList } from "./components/organizations-list";
 function SkeletonRow() {
 	return (
 		<div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4">
-			<Skeleton className="h-10 w-10 rounded-full" />
+			<Skeleton className="size-10 rounded-full" />
 			<div className="space-y-2">
 				<Skeleton className="h-4 w-32" />
 				<Skeleton className="h-3 w-24" />

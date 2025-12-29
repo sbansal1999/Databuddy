@@ -35,7 +35,7 @@ export function EmptyState({
 				className={`mx-auto mb-6 w-fit rounded-2xl border p-6 sm:mb-8 sm:p-8 ${variantStyles[variant]}`}
 			>
 				<Icon
-					className="h-12 w-12 text-accent-foreground sm:h-16 sm:w-16"
+					className="size-12 text-accent-foreground sm:size-16"
 					size={48}
 					weight="duotone"
 				/>

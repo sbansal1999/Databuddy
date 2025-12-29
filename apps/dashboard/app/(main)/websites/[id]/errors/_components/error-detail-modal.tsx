@@ -89,9 +89,9 @@ const CopyButton = ({
 			variant="ghost"
 		>
 			{isCopied ? (
-				<CheckIcon className="h-3.5 w-3.5 text-green-500" weight="bold" />
+				<CheckIcon className="size-3.5 text-green-500" weight="bold" />
 			) : (
-				<CopyIcon className="h-3.5 w-3.5 text-muted-foreground" />
+				<CopyIcon className="size-3.5 text-muted-foreground" />
 			)}
 		</Button>
 	);
@@ -110,7 +110,7 @@ const SeverityIndicator = ({
 
 	return (
 		<div className="flex items-center gap-2">
-			<span className={`h-2.5 w-2.5 rounded-full ${config[severity].color}`} />
+			<span className={`size-2.5 rounded-full ${config[severity].color}`} />
 			<span className="text-muted-foreground text-xs capitalize">
 				{severity} severity
 			</span>
@@ -178,7 +178,7 @@ Context:
 					size="sm"
 					variant="outline"
 				>
-					<LinkIcon className="h-3.5 w-3.5" weight="duotone" />
+					<LinkIcon className="size-3.5" weight="duotone" />
 					Copy URL
 				</Button>
 			),
@@ -196,7 +196,7 @@ Context:
 			node: (
 				<Button asChild size="sm" variant="ghost">
 					<a href={error.path} rel="noopener noreferrer" target="_blank">
-						<ArrowSquareOutIcon className="h-3.5 w-3.5" weight="duotone" />
+						<ArrowSquareOutIcon className="size-3.5" weight="duotone" />
 						Open Page
 					</a>
 				</Button>
@@ -214,7 +214,7 @@ Context:
 					size="sm"
 					variant="ghost"
 				>
-					<HashIcon className="h-3.5 w-3.5" weight="duotone" />
+					<HashIcon className="size-3.5" weight="duotone" />
 					Copy Session
 				</Button>
 			),
@@ -231,7 +231,7 @@ Context:
 					size="sm"
 					variant="ghost"
 				>
-					<StackIcon className="h-3.5 w-3.5" weight="duotone" />
+					<StackIcon className="size-3.5" weight="duotone" />
 					Copy Stack
 				</Button>
 			),
@@ -327,7 +327,7 @@ Context:
 			<SheetContent className="sm:max-w-xl" side="right">
 				<SheetHeader>
 					<div className="flex items-center gap-4">
-						<div className="flex h-11 w-11 items-center justify-center rounded bg-accent">
+						<div className="flex size-11 items-center justify-center rounded bg-accent">
 							{getErrorTypeIcon(type)}
 						</div>
 						<div className="min-w-0 flex-1">
@@ -338,7 +338,7 @@ Context:
 								<Badge className={getSeverityColor(severity)}>{severity}</Badge>
 							</div>
 							<SheetDescription className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs sm:text-sm">
-								<ClockIcon className="h-3.5 w-3.5" weight="duotone" />
+								<ClockIcon className="size-3.5" weight="duotone" />
 								<span>{relativeTimeStr}</span>
 								<span className="text-muted-foreground/50">•</span>
 								<span className="font-mono">

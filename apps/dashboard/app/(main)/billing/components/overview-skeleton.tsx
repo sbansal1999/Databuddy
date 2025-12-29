@@ -12,7 +12,7 @@ export function OverviewSkeleton() {
 					{[1, 2, 3].map((i) => (
 						<div className="px-5 py-4" key={i}>
 							<div className="mb-3 flex items-center gap-3">
-								<Skeleton className="h-10 w-10 rounded" />
+								<Skeleton className="size-10 rounded" />
 								<div>
 									<Skeleton className="mb-1 h-4 w-24" />
 									<Skeleton className="h-3 w-32" />
@@ -27,7 +27,7 @@ export function OverviewSkeleton() {
 				<div className="border-b p-5">
 					<Skeleton className="mb-3 h-5 w-28" />
 					<div className="flex items-center gap-3">
-						<Skeleton className="h-11 w-11 rounded" />
+						<Skeleton className="size-11 rounded" />
 						<div>
 							<Skeleton className="mb-1 h-4 w-20" />
 							<Skeleton className="h-3 w-28" />

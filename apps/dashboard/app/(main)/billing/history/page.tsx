@@ -132,7 +132,7 @@ const InvoiceRow = memo(function InvoiceRowComponent({
 				<div className="flex items-center gap-3">
 					<div
 						className={cn(
-							"flex h-10 w-10 shrink-0 items-center justify-center rounded border",
+							"flex size-10 shrink-0 items-center justify-center rounded border",
 							status.variant === "green"
 								? "border-green-600 bg-green-100 dark:border-green-800 dark:bg-green-900/30"
 								: status.variant === "amber"
@@ -307,7 +307,7 @@ function HistorySkeleton() {
 					{[1, 2, 3].map((i) => (
 						<div className="px-5 py-4" key={i}>
 							<div className="flex items-center gap-3">
-								<Skeleton className="h-10 w-10 rounded" />
+								<Skeleton className="size-10 rounded" />
 								<div>
 									<Skeleton className="mb-1 h-4 w-32" />
 									<Skeleton className="h-3 w-24" />

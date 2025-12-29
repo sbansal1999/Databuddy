@@ -408,7 +408,7 @@ export function WebsitePageHeaderSkeleton() {
 				<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 					<div className="space-y-2">
 						<div className="flex items-center gap-3">
-							<div className="h-12 w-12 animate-pulse rounded bg-muted" />
+							<div className="size-12 animate-pulse rounded bg-muted" />
 							<div>
 								<div className="mb-2 h-8 w-48 animate-pulse rounded bg-muted" />
 								<div className="h-4 w-64 animate-pulse rounded bg-muted" />

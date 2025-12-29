@@ -97,7 +97,7 @@ export function GoalAnalytics({
 				<Card className="rounded">
 					<CardContent className="p-6">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
+							<div className="flex size-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
 								<Users className="text-foreground" size={20} weight="duotone" />
 							</div>
 							<div>
@@ -116,7 +116,7 @@ export function GoalAnalytics({
 				<Card className="rounded">
 					<CardContent className="p-6">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
+							<div className="flex size-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
 								<Target
 									className="text-green-600 dark:text-green-400"
 									size={20}
@@ -139,7 +139,7 @@ export function GoalAnalytics({
 				<Card className="rounded">
 					<CardContent className="p-6">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
+							<div className="flex size-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
 								<TrendUp
 									className="text-purple-600 dark:text-purple-400"
 									size={20}

@@ -38,7 +38,7 @@ function EmptyState() {
 	return (
 		<>
 			<div className="flex h-full flex-col items-center justify-center p-8 text-center">
-				<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+				<div className="mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10">
 					<BuildingsIcon className="text-primary" size={28} weight="duotone" />
 				</div>
 				<h3 className="mb-1 font-semibold text-lg">No organizations yet</h3>

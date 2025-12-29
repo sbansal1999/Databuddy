@@ -479,7 +479,7 @@ export function SSOProviderSheet({
 			<SheetContent className="sm:max-w-md" side="right">
 				<SheetHeader>
 					<div className="flex items-center gap-4">
-						<div className="flex h-11 w-11 items-center justify-center rounded border bg-secondary-brighter">
+						<div className="flex size-11 items-center justify-center rounded border bg-secondary-brighter">
 							<FingerprintIcon
 								className="text-accent-foreground"
 								size={22}

@@ -164,7 +164,7 @@ export const RecentErrorsTable = ({ recentErrors }: Props) => {
 							<TooltipTrigger asChild>
 								<div className="flex max-w-[140px] items-center gap-1.5">
 									<CodeIcon
-										className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+										className="size-3.5 shrink-0 text-muted-foreground"
 										weight="duotone"
 									/>
 									<span className="truncate font-mono text-sm">{pathname}</span>
@@ -261,7 +261,7 @@ export const RecentErrorsTable = ({ recentErrors }: Props) => {
 							<TooltipTrigger asChild>
 								<div className="flex items-center gap-1.5 text-muted-foreground">
 									<ClockIcon
-										className="h-3.5 w-3.5 shrink-0"
+										className="size-3.5 shrink-0"
 										weight="duotone"
 									/>
 									<span className="whitespace-nowrap text-sm">{relative}</span>

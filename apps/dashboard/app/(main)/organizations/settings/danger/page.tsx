@@ -19,7 +19,7 @@ function PageSkeleton() {
 							<Skeleton className="h-32 w-full rounded" />
 						</div>
 						<div className="flex items-center justify-center">
-							<Skeleton className="h-9 w-9 rounded" />
+							<Skeleton className="size-9 rounded" />
 						</div>
 						<div className="space-y-2">
 							<Skeleton className="h-4 w-32" />
