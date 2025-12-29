@@ -132,16 +132,7 @@ export const RecentErrorsTable = ({ recentErrors }: Props) => {
 									</Tooltip>
 								)}
 							</div>
-							<Tooltip skipProvider>
-								<TooltipTrigger asChild>
-									<p className="line-clamp-2 cursor-help text-muted-foreground text-sm leading-relaxed">
-										{message}
-									</p>
-								</TooltipTrigger>
-								<TooltipContent className="max-w-md">
-									<p className="wrap-break-word">{message}</p>
-								</TooltipContent>
-							</Tooltip>
+							<p className="wrap-break-word">{message}</p>
 						</div>
 					);
 				},
@@ -230,8 +221,6 @@ export const RecentErrorsTable = ({ recentErrors }: Props) => {
 					}
 
 					return (
-						<Tooltip skipProvider>
-							<TooltipTrigger asChild>
 								<div className="flex items-center gap-1.5">
 									<CountryFlag
 										country={countryCode || countryName || ""}
@@ -241,9 +230,6 @@ export const RecentErrorsTable = ({ recentErrors }: Props) => {
 										{countryName}
 									</span>
 								</div>
-							</TooltipTrigger>
-							<TooltipContent>{countryName}</TooltipContent>
-						</Tooltip>
 					);
 				},
 			},
