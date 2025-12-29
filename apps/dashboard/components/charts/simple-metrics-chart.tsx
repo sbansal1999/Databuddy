@@ -133,7 +133,12 @@ export function SimpleMetricsChart({
 									))}
 								</defs>
 
-								<XAxis dataKey="date" hide />
+								<XAxis
+									axisLine={false}
+									dataKey="date"
+									tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+									tickLine={false}
+								/>
 								<YAxis domain={["dataMin", "dataMax"]} hide />
 
 								<Tooltip
