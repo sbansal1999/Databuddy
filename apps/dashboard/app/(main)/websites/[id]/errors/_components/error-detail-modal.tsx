@@ -392,10 +392,10 @@ Context:
 					</section>
 
 					{error.stack && (
-						<section className="space-y-2">
+						<section>
 							<Accordion collapsible defaultValue="stack" type="single">
 								<AccordionItem value="stack">
-									<AccordionTrigger className="px-3">
+									<AccordionTrigger>
 										<div className="flex items-center gap-2">
 											<StackIcon
 												className="size-4 text-chart-2"
@@ -407,23 +407,23 @@ Context:
 										</div>
 									</AccordionTrigger>
 									<AccordionContent>
-										<div className="rounded border bg-accent/30 p-4">
+										<div className="relative rounded border bg-accent/30 p-4">
 											<pre className="wrap-break-word max-h-56 overflow-auto whitespace-pre-wrap font-mono text-foreground text-xs leading-relaxed">
 												{error.stack}
 											</pre>
+											<div className="absolute top-4 right-4">
+												<CopyButton
+													ariaLabel="Copy stack trace"
+													copiedSection={copiedSection}
+													onCopy={copyToClipboard}
+													section="stack"
+													text={error.stack}
+												/>
+											</div>
 										</div>
 									</AccordionContent>
 								</AccordionItem>
 							</Accordion>
-							<div className="flex justify-end">
-								<CopyButton
-									ariaLabel="Copy stack trace"
-									copiedSection={copiedSection}
-									onCopy={copyToClipboard}
-									section="stack"
-									text={error.stack}
-								/>
-							</div>
 						</section>
 					)}
 
