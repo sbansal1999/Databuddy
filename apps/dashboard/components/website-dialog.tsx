@@ -151,6 +151,8 @@ export function WebsiteDialog({
 	const isPending =
 		createWebsiteMutation.isPending || updateWebsiteMutation.isPending;
 
+	const isSubmitDisabled = !(form.formState.isValid && form.formState.isDirty);
+
 	return (
 		<FormDialog
 			description={
@@ -162,7 +164,7 @@ export function WebsiteDialog({
 			onOpenChange={onOpenChange}
 			onSubmit={form.handleSubmit(handleSubmit)}
 			open={open}
-			submitDisabled={!form.formState.isValid}
+			submitDisabled={isSubmitDisabled}
 			submitLabel={isEditing ? "Save changes" : "Create website"}
 			title={isEditing ? "Edit Website" : "Create a new website"}
 		>
