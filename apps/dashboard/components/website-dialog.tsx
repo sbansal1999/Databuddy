@@ -154,7 +154,10 @@ export function WebsiteDialog({
 	const isPending =
 		createWebsiteMutation.isPending || updateWebsiteMutation.isPending;
 
-	const isSubmitDisabled = !(form.formState.isValid && form.formState.isDirty);
+	// Should not access directly (form.formState.isValid); that doesn't trigger re-render
+	// https://react-hook-form.com/docs/useform/formstate
+	const { isValid, isDirty } = form.formState;
+	const isSubmitDisabled = !(isValid && isDirty);
 
 	return (
 		<FormDialog
