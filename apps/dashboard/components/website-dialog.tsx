@@ -1,8 +1,9 @@
 "use client";
 
+import { WEBSITE_NAME_REGEX } from "@databuddy/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useOrganizationsContext } from "@/components/providers/organizations-provider";
@@ -41,7 +42,11 @@ const domainRegex =
 const wwwRegex = /^www\./;
 
 const formSchema = z.object({
-	name: z.string().min(1, "Name is required"),
+	name: z
+		.string()
+		.trim()
+		.min(1, "Name is required")
+		.regex(WEBSITE_NAME_REGEX, "Use alphanumeric, spaces, -, _, or ."),
 	domain: z
 		.string()
 		.min(1, "Domain is required")
@@ -72,6 +77,7 @@ export function WebsiteDialog({
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
+		mode: "onBlur",
 		defaultValues: {
 			name: "",
 			domain: "",
@@ -117,8 +123,7 @@ export function WebsiteDialog({
 		return rpcError?.message || defaultMessage;
 	};
 
-	const handleSubmit = async () => {
-		const formData = form.getValues();
+	const handleSubmit: SubmitHandler<FormData> = async (formData) => {
 		const submissionData: CreateWebsiteData = {
 			name: formData.name,
 			domain: formData.domain,
