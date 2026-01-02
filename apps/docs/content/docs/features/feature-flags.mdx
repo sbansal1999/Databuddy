@@ -19,84 +19,84 @@ Feature flags allow you to control feature rollouts and conduct A/B testing with
 
 <Tab>
 <CodeBlock language="tsx" filename="app.tsx">
-{`'use client';
+  {`'use client';
 
-import { FlagsProvider, useFeature } from '@databuddy/sdk/react';
-import { useSession } from '@databuddy/auth/client';
+  import { FlagsProvider, useFeature } from '@databuddy/sdk/react';
+  import { useSession } from '@databuddy/auth/client';
 
-function App() {
-  const { data: session, isPending } = useSession();
+  function App() {
+    const { data: session, isPending } = useSession();
 
-  return (
-    <FlagsProvider
-      clientId="your-website-id"
-      apiUrl="https://api.databuddy.cc"
-      isPending={isPending}
-      user={session?.user ? {
-        userId: session.user.id,
-        email: session.user.email,
-        properties: {
-          plan: session.user.plan || 'free',
-          role: session.user.role || 'user',
-          organization: session.user.organizationId,
-          region: 'us-east',
-        }
-      } : undefined}
-    >
-      <MyComponent />
-    </FlagsProvider>
-  );
-}
+    return (
+      <FlagsProvider
+        clientId="your-website-id"
+        apiUrl="https://api.databuddy.cc"
+        isPending={isPending}
+        user={session?.user ? {
+          userId: session.user.id,
+          email: session.user.email,
+          properties: {
+            plan: session.user.plan || 'free',
+            role: session.user.role || 'user',
+            organization: session.user.organizationId,
+            region: 'us-east',
+          }
+        } : undefined}
+      >
+        <MyComponent />
+      </FlagsProvider>
+    );
+  }
 
-function MyComponent() {
-  const { on: isDarkMode, loading } = useFeature('dark-mode');
-  const { on: showNewDashboard } = useFeature('new-dashboard');
+  function MyComponent() {
+    const { on: isDarkMode, loading } = useFeature('dark-mode');
+    const { on: showNewDashboard } = useFeature('new-dashboard');
 
-  if (loading) return <Skeleton />;
+    if (loading) return <Skeleton />;
 
-  return (
-    <div className={isDarkMode ? 'dark' : ''}>
-      {showNewDashboard ? <NewDashboard /> : <OldDashboard />}
-    </div>
-  );
-}`}
+    return (
+      <div className={isDarkMode ? 'dark' : ''}>
+        {showNewDashboard ? <NewDashboard /> : <OldDashboard />}
+      </div>
+    );
+  }`}
 </CodeBlock>
 </Tab>
 
 <Tab>
 <CodeBlock language="tsx" filename="app.tsx">
-{`'use client';
+  {`'use client';
 
-import { FlagsProvider, useFeature } from '@databuddy/sdk/react';
+  import { FlagsProvider, useFeature } from '@databuddy/sdk/react';
 
-function App() {
-  return (
-    <FlagsProvider
-      clientId="your-client-id"
-      apiUrl="https://api.databuddy.cc"
-      user={{
-        userId: "user-123",
-        email: "user@example.com"
-      }}
-    >
-      <MyComponent />
-    </FlagsProvider>
-  );
-}
+  function App() {
+    return (
+      <FlagsProvider
+        clientId="your-client-id"
+        apiUrl="https://api.databuddy.cc"
+        user={{
+          userId: "user-123",
+          email: "user@example.com"
+        }}
+      >
+        <MyComponent />
+      </FlagsProvider>
+    );
+  }
 
-function MyComponent() {
-  const { on, loading } = useFeature('new-feature');
+  function MyComponent() {
+    const { on, loading } = useFeature('new-feature');
 
-  if (loading) return <Skeleton />;
-  return on ? <NewFeature /> : <OldFeature />;
-}`}
+    if (loading) return <Skeleton />;
+    return on ? <NewFeature /> : <OldFeature />;
+  }`}
 </CodeBlock>
 </Tab>
 
 <Tab>
 <CodeBlock language="bash" filename="terminal">
-{`# Install the SDK
-bun add @databuddy/sdk`}
+  {`# Install the SDK
+  bun add @databuddy/sdk`}
 </CodeBlock>
 </Tab>
 
@@ -109,14 +109,14 @@ bun add @databuddy/sdk`}
 The simplest way to check if a feature is enabled. Returns an object with `{ on, loading, status, value, variant }`.
 
 <CodeBlock language="tsx">
-{`import { useFeature } from '@databuddy/sdk/react';
+  {`import { useFeature } from '@databuddy/sdk/react';
 
-function MyComponent() {
-  const { on, loading } = useFeature('new-dashboard');
-  
-  if (loading) return <Skeleton />;
-  return on ? <NewDashboard /> : <OldDashboard />;
-}`}
+  function MyComponent() {
+    const { on, loading } = useFeature('new-dashboard');
+    
+    if (loading) return <Skeleton />;
+    return on ? <NewDashboard /> : <OldDashboard />;
+  }`}
 </CodeBlock>
 
 ### `useFeatureOn(key, defaultValue)` - SSR-Safe Boolean
@@ -124,18 +124,18 @@ function MyComponent() {
 Returns a boolean directly with a default value. Perfect for SSR where you need an immediate value.
 
 <CodeBlock language="tsx">
-{`import { useFeatureOn } from '@databuddy/sdk/react';
+  {`import { useFeatureOn } from '@databuddy/sdk/react';
 
-function MyComponent() {
-  // Returns false while loading, then the actual value
-  const isDarkMode = useFeatureOn('dark-mode', false);
-  
-  return (
-    <div className={isDarkMode ? 'dark' : 'light'}>
-      Content
-    </div>
-  );
-}`}
+  function MyComponent() {
+    // Returns false while loading, then the actual value
+    const isDarkMode = useFeatureOn('dark-mode', false);
+    
+    return (
+      <div className={isDarkMode ? 'dark' : 'light'}>
+        Content
+      </div>
+    );
+  }`}
 </CodeBlock>
 
 ### `useFlag(key)` - Full State Control
@@ -143,22 +143,22 @@ function MyComponent() {
 Get the complete flag state with all properties including status and error handling.
 
 <CodeBlock language="tsx">
-{`import { useFlag } from '@databuddy/sdk/react';
+  {`import { useFlag } from '@databuddy/sdk/react';
 
-function MyComponent() {
-  const flag = useFlag('experiment');
-  
-  switch (flag.status) {
-    case 'loading':
-      return <Skeleton />;
-    case 'error':
-      return <ErrorFallback />;
-    case 'ready':
-      return flag.on ? <NewFeature /> : <OldFeature />;
-    case 'pending':
-      return <LoadingState />;
-  }
-}`}
+  function MyComponent() {
+    const flag = useFlag('experiment');
+    
+    switch (flag.status) {
+      case 'loading':
+        return <Skeleton />;
+      case 'error':
+        return <ErrorFallback />;
+      case 'ready':
+        return flag.on ? <NewFeature /> : <OldFeature />;
+      case 'pending':
+        return <LoadingState />;
+    }
+  }`}
 </CodeBlock>
 
 ### `useFlagValue(key, defaultValue)` - Typed Values
@@ -166,18 +166,18 @@ function MyComponent() {
 Get typed values for string or number flags.
 
 <CodeBlock language="tsx">
-{`import { useFlagValue } from '@databuddy/sdk/react';
+  {`import { useFlagValue } from '@databuddy/sdk/react';
 
-function MyComponent() {
-  const maxItems = useFlagValue('max-items', 10);
-  const theme = useFlagValue<'light' | 'dark'>('theme', 'light');
-  
-  return (
-    <div className={theme}>
-      Showing {maxItems} items
-    </div>
-  );
-}`}
+  function MyComponent() {
+    const maxItems = useFlagValue('max-items', 10);
+    const theme = useFlagValue<'light' | 'dark'>('theme', 'light');
+    
+    return (
+      <div className={theme}>
+        Showing {maxItems} items
+      </div>
+    );
+  }`}
 </CodeBlock>
 
 ### `useVariant(key)` - A/B Testing
@@ -185,16 +185,16 @@ function MyComponent() {
 Get the variant name for multivariate testing.
 
 <CodeBlock language="tsx">
-{`import { useVariant } from '@databuddy/sdk/react';
+  {`import { useVariant } from '@databuddy/sdk/react';
 
-function CheckoutPage() {
-  const variant = useVariant('checkout-experiment');
-  
-  if (variant === 'control') return <OldCheckout />;
-  if (variant === 'variant-a') return <NewCheckoutA />;
-  if (variant === 'variant-b') return <NewCheckoutB />;
-  return <DefaultCheckout />;
-}`}
+  function CheckoutPage() {
+    const variant = useVariant('checkout-experiment');
+    
+    if (variant === 'control') return <OldCheckout />;
+    if (variant === 'variant-a') return <NewCheckoutA />;
+    if (variant === 'variant-b') return <NewCheckoutB />;
+    return <DefaultCheckout />;
+  }`}
 </CodeBlock>
 
 ## Flag Types
@@ -203,23 +203,23 @@ function CheckoutPage() {
 Simple on/off switches for features.
 
 <CodeBlock language="tsx">
-{`const { on } = useFeature('my-feature');`}
+  {`const { on } = useFeature('my-feature');`}
 </CodeBlock>
 
 ### String/Number Flags
 For configuration values and multivariate testing.
 
 <CodeBlock language="tsx">
-{`const maxUsers = useFlagValue('max-users', 100);
-const theme = useFlagValue<'light' | 'dark'>('theme', 'light');`}
+  {`const maxUsers = useFlagValue('max-users', 100);
+  const theme = useFlagValue<'light' | 'dark'>('theme', 'light');`}
 </CodeBlock>
 
 ### Rollout Flags
 Gradually roll out features to a percentage of users.
 
 <CodeBlock language="tsx">
-{`// Set rollout percentage in dashboard (e.g., 25%)
-const { on } = useFeature('new-ui-rollout');`}
+  {`// Set rollout percentage in dashboard (e.g., 25%)
+  const { on } = useFeature('new-ui-rollout');`}
 </CodeBlock>
 
 ### Multivariant Flags (A/B/n Testing)
@@ -227,26 +227,26 @@ const { on } = useFeature('new-ui-rollout');`}
 Run experiments with multiple variants. Each user is consistently assigned to a variant based on their identifier.
 
 <CodeBlock language="tsx" filename="checkout-experiment.tsx">
-{`import { useVariant, useFeature } from '@databuddy/sdk/react';
+  {`import { useVariant, useFeature } from '@databuddy/sdk/react';
 
-function CheckoutPage() {
-  const variant = useVariant('checkout-experiment');
-  const { value, loading } = useFeature('checkout-experiment');
-  
-  if (loading) return <Skeleton />;
-  
-  // Variant-based rendering
-  switch (variant) {
-    case 'control':
-      return <CurrentCheckout />;
-    case 'simplified':
-      return <SimplifiedCheckout />;
-    case 'one-click':
-      return <OneClickCheckout />;
-    default:
-      return <CurrentCheckout />;
-  }
-}`}
+  function CheckoutPage() {
+    const variant = useVariant('checkout-experiment');
+    const { value, loading } = useFeature('checkout-experiment');
+    
+    if (loading) return <Skeleton />;
+    
+    // Variant-based rendering
+    switch (variant) {
+      case 'control':
+        return <CurrentCheckout />;
+      case 'simplified':
+        return <SimplifiedCheckout />;
+      case 'one-click':
+        return <OneClickCheckout />;
+      default:
+        return <CurrentCheckout />;
+    }
+  }`}
 </CodeBlock>
 
 **Creating multivariant flags in the dashboard:**
@@ -269,32 +269,32 @@ function CheckoutPage() {
 ## Configuration
 
 <CodeBlock language="tsx" filename="provider.tsx">
-{`<FlagsProvider
-  clientId="your-website-id"
-  apiUrl="https://api.databuddy.cc"
-  user={{
-    userId: currentUser.id,
-    email: currentUser.email,
-    properties: {
-      plan: currentUser.plan || 'free',
-      role: currentUser.role || 'user',
-      organization: currentUser.organizationId,
-      region: currentUser.region || 'us-east',
-      signupDate: currentUser.createdAt,
-      featureUsage: {
-        reportsViewed: currentUser.reportsViewed || 0,
-        dashboardsCreated: currentUser.dashboardsCreated || 0,
+  {`<FlagsProvider
+    clientId="your-website-id"
+    apiUrl="https://api.databuddy.cc"
+    user={{
+      userId: currentUser.id,
+      email: currentUser.email,
+      properties: {
+        plan: currentUser.plan || 'free',
+        role: currentUser.role || 'user',
+        organization: currentUser.organizationId,
+        region: currentUser.region || 'us-east',
+        signupDate: currentUser.createdAt,
+        featureUsage: {
+          reportsViewed: currentUser.reportsViewed || 0,
+          dashboardsCreated: currentUser.dashboardsCreated || 0,
+        }
       }
-    }
-  }}
-  isPending={isLoadingSession}
-  debug={process.env.NODE_ENV === 'development'}
-  autoFetch={true}
-  cacheTtl={60000}        // Cache for 1 minute
-  staleTime={30000}       // Revalidate after 30s
->
-  <App />
-</FlagsProvider>`}
+    }}
+    isPending={isLoadingSession}
+    debug={process.env.NODE_ENV === 'development'}
+    autoFetch={true}
+    cacheTtl={60000}        // Cache for 1 minute
+    staleTime={30000}       // Revalidate after 30s
+  >
+    <App />
+  </FlagsProvider>`}
 </CodeBlock>
 
 ### Configuration Options
@@ -318,43 +318,43 @@ function CheckoutPage() {
 Access the flags context directly for more control:
 
 <CodeBlock language="tsx">
-{`import { useFlags } from '@databuddy/sdk/react';
+  {`import { useFlags } from '@databuddy/sdk/react';
 
-function MyComponent() {
-  const { 
-    isOn,           // Simple boolean check
-    getFlag,        // Get full flag state
-    getValue,       // Get typed value
-    fetchFlag,      // Async fetch single flag
-    fetchAllFlags,  // Async fetch all flags
-    updateUser,     // Update user context
-    refresh,        // Refresh all flags
-    isReady         // SDK ready state
-  } = useFlags();
+  function MyComponent() {
+    const { 
+      isOn,           // Simple boolean check
+      getFlag,        // Get full flag state
+      getValue,       // Get typed value
+      fetchFlag,      // Async fetch single flag
+      fetchAllFlags,  // Async fetch all flags
+      updateUser,     // Update user context
+      refresh,        // Refresh all flags
+      isReady         // SDK ready state
+    } = useFlags();
 
-  // Simple check
-  if (isOn('premium-feature')) {
-    // Show premium content
-  }
+    // Simple check
+    if (isOn('premium-feature')) {
+      // Show premium content
+    }
 
-  // Get full state
-  const flag = getFlag('experiment');
-  console.log(flag.on, flag.loading, flag.status);
+    // Get full state
+    const flag = getFlag('experiment');
+    console.log(flag.on, flag.loading, flag.status);
 
-  // Refresh flags
-  const handleRefresh = async () => {
-    await refresh();
-  };
+    // Refresh flags
+    const handleRefresh = async () => {
+      await refresh();
+    };
 
-  // Update user context
-  const handleUpgrade = async () => {
-    updateUser({
-      userId: user.id,
-      email: user.email,
-      properties: { plan: 'premium' }
-    });
-  };
-}`}
+    // Update user context
+    const handleUpgrade = async () => {
+      updateUser({
+        userId: user.id,
+        email: user.email,
+        properties: { plan: 'premium' }
+      });
+    };
+  }`}
 </CodeBlock>
 
 ## Flag States
@@ -362,18 +362,18 @@ function MyComponent() {
 The `FlagState` object has the following properties:
 
 <CodeBlock language="tsx">
-{`interface FlagState {
-  on: boolean;              // Whether the flag is enabled
-  loading: boolean;         // Whether the flag is loading
-  status: FlagStatus;       // 'loading' | 'ready' | 'error' | 'pending'
-  value?: boolean | string | number;  // The flag's value
-  variant?: string;         // Variant for A/B tests
-  
-  // Deprecated (use above instead):
-  enabled: boolean;         // Use 'on' instead
-  isLoading: boolean;       // Use 'loading' instead
-  isReady: boolean;         // Use 'status === "ready"' instead
-}`}
+  {`interface FlagState {
+    on: boolean;              // Whether the flag is enabled
+    loading: boolean;         // Whether the flag is loading
+    status: FlagStatus;       // 'loading' | 'ready' | 'error' | 'pending'
+    value?: boolean | string | number;  // The flag's value
+    variant?: string;         // Variant for A/B tests
+    
+    // Deprecated (use above instead):
+    enabled: boolean;         // Use 'on' instead
+    isLoading: boolean;       // Use 'loading' instead
+    isReady: boolean;         // Use 'status === "ready"' instead
+  }`}
 </CodeBlock>
 
 ## Performance Features
@@ -382,18 +382,18 @@ The `FlagState` object has the following properties:
 Flags return cached values immediately while revalidating in the background.
 
 <CodeBlock language="tsx">
-{`// Returns cached value instantly, revalidates if stale
-const { on } = useFeature('my-feature');  // Instant!`}
+  {`// Returns cached value instantly, revalidates if stale
+  const { on } = useFeature('my-feature');  // Instant!`}
 </CodeBlock>
 
 ### Request Batching
 Multiple flag requests within 10ms are batched into a single API call.
 
 <CodeBlock language="tsx">
-{`// These 3 calls become 1 API request
-const feature1 = useFeature('feature-1');
-const feature2 = useFeature('feature-2');
-const feature3 = useFeature('feature-3');`}
+  {`// These 3 calls become 1 API request
+  const feature1 = useFeature('feature-1');
+  const feature2 = useFeature('feature-2');
+  const feature3 = useFeature('feature-3');`}
 </CodeBlock>
 
 ### Visibility API
@@ -407,18 +407,18 @@ Identical requests are deduplicated automatically.
 The `isPending` prop prevents race conditions during authentication:
 
 <CodeBlock language="tsx">
-{`// ❌ Bad: Flags evaluate with wrong user context
-<FlagsProvider user={undefined}>
-  <App /> // Shows anonymous features, then switches
-</FlagsProvider>
+  {`// ❌ Bad: Flags evaluate with wrong user context
+  <FlagsProvider user={undefined}>
+    <App /> // Shows anonymous features, then switches
+  </FlagsProvider>
 
-// ✅ Good: Waits for session before evaluating
-<FlagsProvider 
-  isPending={isPending} 
-  user={session?.user ? {...} : undefined}
->
-  <App /> // Shows correct features immediately
-</FlagsProvider>`}
+  // ✅ Good: Waits for session before evaluating
+  <FlagsProvider 
+    isPending={isPending} 
+    user={session?.user ? {...} : undefined}
+  >
+    <App /> // Shows correct features immediately
+  </FlagsProvider>`}
 </CodeBlock>
 
 **Benefits:**
@@ -438,21 +438,21 @@ Target specific users or groups from your dashboard:
 ### Advanced Targeting with Custom Properties
 
 <CodeBlock language="tsx">
-{`<FlagsProvider
-  user={{
-    userId: "user-123",
-    email: "user@example.com",
-    properties: {
-      plan: 'premium',           // Plan-based rollouts
-      region: 'us-east',         // Geographic targeting
-      signupDate: '2024-01-01',  // Time-based targeting
-      experimentGroup: 'A',      // A/B testing
-      featureUsage: {
-        reportsViewed: 25        // Behavioral targeting
+  {`<FlagsProvider
+    user={{
+      userId: "user-123",
+      email: "user@example.com",
+      properties: {
+        plan: 'premium',           // Plan-based rollouts
+        region: 'us-east',         // Geographic targeting
+        signupDate: '2024-01-01',  // Time-based targeting
+        experimentGroup: 'A',      // A/B testing
+        featureUsage: {
+          reportsViewed: 25        // Behavioral targeting
+        }
       }
-    }
-  }}
->`}
+    }}
+  >`}
 </CodeBlock>
 
 **Targeting Examples:**
@@ -466,87 +466,87 @@ Target specific users or groups from your dashboard:
 ### ✅ Use the Right Hook
 
 <CodeBlock language="tsx">
-{`// Simple boolean check
-const { on, loading } = useFeature('dark-mode');
+  {`// Simple boolean check
+  const { on, loading } = useFeature('dark-mode');
 
-// SSR-safe with default
-const isDarkMode = useFeatureOn('dark-mode', false);
+  // SSR-safe with default
+  const isDarkMode = useFeatureOn('dark-mode', false);
 
-// Full control with status
-const flag = useFlag('experiment');
-if (flag.status === 'ready') { ... }
+  // Full control with status
+  const flag = useFlag('experiment');
+  if (flag.status === 'ready') { ... }
 
-// Typed values
-const maxItems = useFlagValue('max-items', 10);
+  // Typed values
+  const maxItems = useFlagValue('max-items', 10);
 
-// A/B test variants
-const variant = useVariant('checkout-test');`}
+  // A/B test variants
+  const variant = useVariant('checkout-test');`}
 </CodeBlock>
 
 ### ✅ Handle Loading States
 
 <CodeBlock language="tsx">
-{`function FeatureComponent() {
-  const { on, loading } = useFeature('new-feature');
-  
-  if (loading) return <Skeleton />;
-  return on ? <NewFeature /> : <OldFeature />;
-}`}
+  {`function FeatureComponent() {
+    const { on, loading } = useFeature('new-feature');
+    
+    if (loading) return <Skeleton />;
+    return on ? <NewFeature /> : <OldFeature />;
+  }`}
 </CodeBlock>
 
 ### ✅ Multiple Flags
 
 <CodeBlock language="tsx">
-{`function Dashboard() {
-  const { on: darkMode } = useFeature('dark-mode');
-  const { on: newLayout } = useFeature('new-layout');
-  const maxItems = useFlagValue('max-items', 10);
+  {`function Dashboard() {
+    const { on: darkMode } = useFeature('dark-mode');
+    const { on: newLayout } = useFeature('new-layout');
+    const maxItems = useFlagValue('max-items', 10);
 
-  return (
-    <div className={darkMode ? 'dark' : ''}>
-      {newLayout ? <NewLayout items={maxItems} /> : <OldLayout />}
-    </div>
-  );
-}`}
+    return (
+      <div className={darkMode ? 'dark' : ''}>
+        {newLayout ? <NewLayout items={maxItems} /> : <OldLayout />}
+      </div>
+    );
+  }`}
 </CodeBlock>
 
 ### ✅ Update User Context
 
 <CodeBlock language="tsx">
-{`function UpgradeButton() {
-  const { updateUser } = useFlags();
+  {`function UpgradeButton() {
+    const { updateUser } = useFlags();
 
-  const handleUpgrade = () => {
-    // Update user context to refresh flags
-    updateUser({
-      userId: user.id,
-      email: user.email,
-      properties: { plan: 'premium' }
-    });
-  };
+    const handleUpgrade = () => {
+      // Update user context to refresh flags
+      updateUser({
+        userId: user.id,
+        email: user.email,
+        properties: { plan: 'premium' }
+      });
+    };
 
-  return <button onClick={handleUpgrade}>Upgrade</button>;
-}`}
+    return <button onClick={handleUpgrade}>Upgrade</button>;
+  }`}
 </CodeBlock>
 
 ## Migration from Old API
 
 <CodeBlock language="tsx">
-{`// ❌ Old (confusing)
-const { isEnabled } = useFlags();
-const flag = isEnabled('my-feature');
-if (flag.isReady && flag.enabled) {
-  return <NewFeature />;
-}
+  {`// ❌ Old (confusing)
+  const { isEnabled } = useFlags();
+  const flag = isEnabled('my-feature');
+  if (flag.isReady && flag.enabled) {
+    return <NewFeature />;
+  }
 
-// ✅ New (clear)
-const { on, loading } = useFeature('my-feature');
-if (loading) return <Skeleton />;
-return on ? <NewFeature /> : <OldFeature />;
+  // ✅ New (clear)
+  const { on, loading } = useFeature('my-feature');
+  if (loading) return <Skeleton />;
+  return on ? <NewFeature /> : <OldFeature />;
 
-// Or even simpler for SSR
-const isOn = useFeatureOn('my-feature', false);
-return isOn ? <NewFeature /> : <OldFeature />;`}
+  // Or even simpler for SSR
+  const isOn = useFeatureOn('my-feature', false);
+  return isOn ? <NewFeature /> : <OldFeature />;`}
 </CodeBlock>
 
 The old API (`isEnabled`) is still supported for backwards compatibility but deprecated.
@@ -556,10 +556,10 @@ The old API (`isEnabled`) is still supported for backwards compatibility but dep
 Enable debug mode to see flag evaluation in the console:
 
 <CodeBlock language="tsx">
-{`<FlagsProvider
-  debug={true}
-  // ... other props
->`}
+  {`<FlagsProvider
+    debug={true}
+    // ... other props
+  >`}
 </CodeBlock>
 
 ---
