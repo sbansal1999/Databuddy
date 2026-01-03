@@ -6,6 +6,8 @@ import {
 	XCircleIcon,
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { Badge } from "@/components/ui/badge";
 import {
 	Table,
@@ -16,6 +18,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const userTimezone = dayjs.tz.guess();
 
 type Check = {
 	timestamp: string;
@@ -123,7 +130,10 @@ export function RecentActivity({ checks, isLoading }: RecentActivityProps) {
 										</div>
 									</TableCell>
 									<TableCell className="text-center text-muted-foreground text-xs">
-										{dayjs(check.timestamp).format("MMM D, HH:mm:ss")}
+										{dayjs
+											.utc(check.timestamp)
+											.tz(userTimezone)
+											.format("MMM D, HH:mm:ss")}
 									</TableCell>
 									<TableCell className="text-center text-muted-foreground text-xs">
 										<Badge className="font-mono text-[10px]" variant="outline">
