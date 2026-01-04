@@ -4,8 +4,9 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import type { ComponentProps } from 'react';
 import { forwardRef, useState } from 'react';
+import TextareaAutosize from 'react-textarea-autosize';
 
-type TextareaProps = ComponentProps<'textarea'> & {
+type TextareaProps = ComponentProps<typeof TextareaAutosize> & {
 	showFocusIndicator?: boolean;
 	wrapperClassName?: string;
 };
@@ -37,7 +38,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
 		return (
 			<div className={cn('relative flex-1 min-w-0', wrapperClassName)}>
-				<textarea
+				<TextareaAutosize
 					ref={ref}
 					className={cn(
 						'field-sizing-content flex min-h-16 w-full rounded-sm border border-accent-brighter px-3 py-2 text-sm outline-none transition-all placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
