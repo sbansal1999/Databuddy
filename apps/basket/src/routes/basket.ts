@@ -71,7 +71,9 @@ function processTrackEventData(
 			trackData.anonymousId,
 			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 		);
-		anonymousId = saltAnonymousId(anonymousId, salt);
+		if (anonymousId) {
+			anonymousId = saltAnonymousId(anonymousId, salt);
+		}
 
 		return {
 			id: randomUUID(),
@@ -141,19 +143,26 @@ function processTrackEventData(
 	});
 }
 
-function processOutgoingLinkData(
+async function processOutgoingLinkData(
 	linkData: any,
 	clientId: string
-): CustomOutgoingLink {
+): Promise<CustomOutgoingLink> {
 	const timestamp = parseTimestamp(linkData.timestamp);
+
+	const salt = await getDailySalt();
+
+	let anonymousId = sanitizeString(
+		linkData.anonymousId,
+		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
+	);
+	if (anonymousId) {
+		anonymousId = saltAnonymousId(anonymousId, salt);
+	}
 
 	return {
 		id: randomUUID(),
 		client_id: clientId,
-		anonymous_id: sanitizeString(
-			linkData.anonymousId,
-			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
-		),
+		anonymous_id: anonymousId,
 		session_id: validateSessionId(linkData.sessionId),
 		href: sanitizeString(linkData.href, VALIDATION_LIMITS.PATH_MAX_LENGTH),
 		text: sanitizeString(linkData.text, VALIDATION_LIMITS.TEXT_MAX_LENGTH),
