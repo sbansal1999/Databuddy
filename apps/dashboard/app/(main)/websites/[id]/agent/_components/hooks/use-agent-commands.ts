@@ -13,7 +13,7 @@ export function useAgentCommands() {
 	const [_, setInput] = useAtom(agentInputAtom);
 	const [showCommands, setShowCommands] = useAtom(showCommandsAtom);
 	const [commandQuery, setCommandQuery] = useAtom(commandQueryAtom);
-	const inputRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLTextAreaElement>(null);
 
 	const { sendMessage } = useChat();
 

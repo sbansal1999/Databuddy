@@ -3,7 +3,7 @@
 import { PaperPlaneRightIcon, StopIcon } from "@phosphor-icons/react";
 import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useChat } from "@/contexts/chat-context";
 import { useEnterSubmit } from "@/hooks/use-enter-submit";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ export function AgentInput() {
 		setInput("");
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 		agentCommands.handleInputChange(
 			e.target.value,
 			e.target.selectionStart ?? 0
@@ -57,12 +57,14 @@ export function AgentInput() {
 
 					<form className="flex gap-2" onSubmit={handleSubmit} ref={formRef}>
 						<div className="relative flex-1">
-							<Input
+							<Textarea
 								className={cn(
-									"h-12 pr-24 pl-4 text-base",
+									"px-4 text-base",
 									"focus:ring-2 focus:ring-primary/20"
 								)}
 								disabled={isLoading}
+								maxRows={4}
+								minRows={1}
 								onChange={handleChange}
 								onKeyDown={onKeyDown}
 								placeholder="Ask the agent to analyze your data..."
