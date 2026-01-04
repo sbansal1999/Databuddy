@@ -23,10 +23,10 @@ import { AgentInput } from "./agent-input";
 import { AgentMessages } from "./agent-messages";
 import { NewChatButton } from "./new-chat-button";
 
-type AgentPageContentProps = {
+interface AgentPageContentProps {
 	chatId: string;
 	websiteId: string;
-};
+}
 
 const SUGGESTED_PROMPTS = [
 	{
@@ -51,13 +51,10 @@ const SUGGESTED_PROMPTS = [
 	},
 ];
 
-export function AgentPageContent({
-	chatId,
-	websiteId: _websiteId,
-}: AgentPageContentProps) {
+export function AgentPageContent({ chatId, websiteId }: AgentPageContentProps) {
 	return (
 		<AgentChatProvider chatId={chatId}>
-			<AgentPageContentInner websiteId={_websiteId} />
+			<AgentPageContentInner websiteId={websiteId} />
 		</AgentChatProvider>
 	);
 }
@@ -78,7 +75,6 @@ function AgentPageContentInner({
 				className={cn(
 					"flex flex-1 flex-col overflow-hidden",
 					"transition-all duration-300 ease-in-out",
-					false
 				)}
 			>
 				<div className="relative z-10 bg-sidebar-accent">

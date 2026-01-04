@@ -1,19 +1,18 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { createContext, useContext } from "react";
+import { createContext, type PropsWithChildren, useContext } from "react";
 
-type AgentChatContextValue = {
+interface AgentChatContextValue {
 	chatId: string;
 	setChatId: (id: string) => void;
-};
+}
 
 const AgentChatContext = createContext<AgentChatContextValue | null>(null);
 
-type AgentChatProviderProps = {
+interface AgentChatProviderProps extends PropsWithChildren {
 	chatId: string;
-	children: React.ReactNode;
-};
+}
 
 export function AgentChatProvider({
 	chatId,
