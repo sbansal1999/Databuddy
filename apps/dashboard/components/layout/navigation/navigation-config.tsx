@@ -413,7 +413,7 @@ export const getContextConfig = (pathname: string) => {
 
 export const getDefaultCategory = (pathname: string) => {
 	for (const { pattern, category } of CATEGORY_PATH_MAP) {
-		if (pathname.startsWith(pattern)) {
+		if (pathname.includes(pattern)) {
 			return category;
 		}
 	}
