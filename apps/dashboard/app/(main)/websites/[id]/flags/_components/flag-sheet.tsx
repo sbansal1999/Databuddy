@@ -4,11 +4,13 @@ import type { FlagWithScheduleForm } from "@databuddy/shared/flags";
 import { flagWithScheduleSchema } from "@databuddy/shared/flags";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+	BuildingsIcon,
 	CaretDownIcon,
 	ClockIcon,
 	FlagIcon,
 	GitBranchIcon,
 	SpinnerGapIcon,
+	UserIcon,
 	UsersIcon,
 	UsersThreeIcon,
 } from "@phosphor-icons/react";
@@ -147,6 +149,7 @@ export function FlagSheet({
 				status: "active",
 				defaultValue: false,
 				rolloutPercentage: 0,
+				rolloutBy: undefined,
 				rules: [],
 				variants: [],
 				dependencies: [],
@@ -188,6 +191,7 @@ export function FlagSheet({
 					status: flag.status,
 					defaultValue: Boolean(flag.defaultValue),
 					rolloutPercentage: flag.rolloutPercentage ?? 0,
+					rolloutBy: flag.rolloutBy || undefined,
 					rules: flag.rules ?? [],
 					variants: flag.variants ?? [],
 					dependencies: flag.dependencies ?? [],
@@ -210,6 +214,7 @@ export function FlagSheet({
 						template.type === "rollout" || template.type === "boolean"
 							? (template.rolloutPercentage ?? 0)
 							: 0,
+					rolloutBy: undefined,
 					rules: template.rules ?? [],
 					variants: template.type === "multivariant" ? template.variants : [],
 					dependencies: [],
@@ -230,6 +235,7 @@ export function FlagSheet({
 					status: "active",
 					defaultValue: false,
 					rolloutPercentage: 0,
+					rolloutBy: undefined,
 					rules: [],
 					variants: [],
 					dependencies: [],
@@ -300,6 +306,7 @@ export function FlagSheet({
 					environment: data.environment?.trim() || undefined,
 					defaultValue: data.defaultValue,
 					rolloutPercentage: data.rolloutPercentage ?? 0,
+					rolloutBy: data.rolloutBy || undefined,
 					targetGroupIds: data.targetGroupIds || [],
 				};
 				await updateMutation.mutateAsync(updateData);
@@ -317,6 +324,7 @@ export function FlagSheet({
 					environment: data.environment?.trim() || undefined,
 					defaultValue: data.defaultValue,
 					rolloutPercentage: data.rolloutPercentage ?? 0,
+					rolloutBy: data.rolloutBy || undefined,
 					targetGroupIds: data.targetGroupIds || [],
 				};
 				await createMutation.mutateAsync(createData);
@@ -552,6 +560,85 @@ export function FlagSheet({
 														</div>
 													</div>
 												)}
+											/>
+
+											<FormField
+												control={form.control}
+												name="flag.rolloutBy"
+												render={({ field }) => {
+													const rolloutByValue = field.value || "user";
+													const options = [
+														{
+															value: "user",
+															label: "User",
+															description: "Each user individually",
+															icon: UserIcon,
+														},
+														{
+															value: "organization",
+															label: "Organization",
+															description: "All org members together",
+															icon: BuildingsIcon,
+														},
+														{
+															value: "team",
+															label: "Team",
+															description: "All team members together",
+															icon: UsersThreeIcon,
+														},
+													] as const;
+
+													return (
+														<div className="space-y-2">
+															<div className="space-y-0.5">
+																<span className="font-medium text-foreground text-sm">
+																	Rollout Unit
+																</span>
+																<p className="text-muted-foreground text-xs">
+																	Group users for consistent rollout results
+																</p>
+															</div>
+															<div className="flex gap-2">
+																{options.map((option) => {
+																	const isSelected =
+																		rolloutByValue === option.value;
+																	const Icon = option.icon;
+																	return (
+																		<button
+																			className={cn(
+																				"flex flex-1 cursor-pointer flex-col items-center gap-1 rounded border px-2 py-2.5 text-center transition-all",
+																				isSelected
+																					? "border-primary bg-primary/5 text-foreground"
+																					: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:bg-secondary/80 hover:text-foreground"
+																			)}
+																			key={option.value}
+																			onClick={() =>
+																				field.onChange(option.value)
+																			}
+																			type="button"
+																		>
+																			<Icon
+																				className={cn(
+																					"size-4",
+																					isSelected
+																						? "text-primary"
+																						: "text-muted-foreground"
+																				)}
+																				weight="duotone"
+																			/>
+																			<span className="block font-medium text-xs">
+																				{option.label}
+																			</span>
+																			<span className="block text-[10px] text-muted-foreground leading-tight">
+																				{option.description}
+																			</span>
+																		</button>
+																	);
+																})}
+															</div>
+														</div>
+													);
+												}}
 											/>
 										</motion.div>
 									) : isMultivariant ? (

@@ -90,13 +90,16 @@ export function Sidebar({ user = null }: SidebarProps) {
 	const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
 		undefined
 	);
-	const { websites, isLoading: isLoadingWebsites } = useWebsites();
-	const accordionStates = useAccordionStates();
-	const sidebarRef = useRef<HTMLDivElement>(null);
-	const previousFocusRef = useRef<HTMLElement | null>(null);
 
 	const isDemo = pathname.startsWith("/demo");
 	const isWebsite = pathname.startsWith("/websites/");
+
+	const { websites, isLoading: isLoadingWebsites } = useWebsites({
+		enabled: user !== null,
+	});
+	const accordionStates = useAccordionStates();
+	const sidebarRef = useRef<HTMLDivElement>(null);
+	const previousFocusRef = useRef<HTMLElement | null>(null);
 
 	const websiteId = useMemo(
 		() => (isDemo || isWebsite ? pathname.split("/")[2] : null),
@@ -327,6 +330,7 @@ export function Sidebar({ user = null }: SidebarProps) {
 						<MobileCategorySelector
 							onCategoryChangeAction={setSelectedCategory}
 							selectedCategory={selectedCategory}
+							user={user}
 						/>
 
 						<nav aria-label="Main navigation" className="flex flex-col">

@@ -29,9 +29,10 @@ export const UptimeSchema = t.Object({
 	check_type: t.String(),
 	user_agent: t.String(),
 	error: t.String(),
+	json_data: t.Optional(t.String()),
 });
 
-export type UptimeData = {
+export interface UptimeData {
 	site_id: string;
 	url: string;
 	timestamp: number;
@@ -53,7 +54,8 @@ export type UptimeData = {
 	check_type: string;
 	user_agent: string;
 	error: string;
-};
+	json_data?: string;
+}
 
 export type ActionResult<T> =
 	| { success: true; data: T }

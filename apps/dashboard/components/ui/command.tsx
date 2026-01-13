@@ -81,10 +81,12 @@ function CommandList({
 	return (
 		<CommandPrimitive.List
 			className={cn(
-				'max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden',
+				'max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden overscroll-contain',
 				className
 			)}
 			data-slot="command-list"
+			onPointerDown={(e) => e.stopPropagation()}
+			onWheel={(e) => e.stopPropagation()}
 			{...props}
 		/>
 	);

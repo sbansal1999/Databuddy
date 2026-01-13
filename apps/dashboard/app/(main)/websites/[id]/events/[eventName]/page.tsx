@@ -15,6 +15,7 @@ import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { useMemo } from "react";
 import { StatCard } from "@/components/analytics";
+import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChartPreferences } from "@/hooks/use-chart-preferences";
 import { useDateFilters } from "@/hooks/use-date-filters";
@@ -122,17 +123,13 @@ export default function EventDetailPage() {
 			{isLoading ? (
 				<EventDetailSkeleton />
 			) : summary.total_events === 0 ? (
-				<div className="rounded border bg-card p-8 text-center">
-					<LightningIcon
-						className="mx-auto size-12 text-muted-foreground/40"
-						weight="duotone"
+				<div className="flex flex-1 items-center justify-center py-16">
+					<EmptyState
+						description="This event has no data in the selected time range."
+						icon={<LightningIcon />}
+						title={`No events found for "${eventName}"`}
+						variant="minimal"
 					/>
-					<h3 className="mt-4 font-medium text-foreground">
-						No events found for "{eventName}"
-					</h3>
-					<p className="mx-auto mt-1 max-w-md text-balance text-muted-foreground text-sm">
-						This event has no data in the selected time range.
-					</p>
 				</div>
 			) : (
 				<>

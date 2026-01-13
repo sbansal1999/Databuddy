@@ -35,10 +35,11 @@ Feature flags allow you to control feature rollouts and conduct A/B testing with
         user={session?.user ? {
           userId: session.user.id,
           email: session.user.email,
+          organizationId: session.user.organizationId,
+          teamId: session.user.teamId,
           properties: {
             plan: session.user.plan || 'free',
             role: session.user.role || 'user',
-            organization: session.user.organizationId,
             region: 'us-east',
           }
         } : undefined}
@@ -222,6 +223,35 @@ Gradually roll out features to a percentage of users.
   const { on } = useFeature('new-ui-rollout');`}
 </CodeBlock>
 
+#### Rollout Units
+
+Control how users are grouped for rollouts. In the dashboard, choose the **Rollout Unit**:
+
+| Unit | Description | Use Case |
+|------|-------------|----------|
+| **User** | Each user individually | Standard per-user rollouts |
+| **Organization** | All org members together | Enterprise features, billing changes |
+| **Team** | All team members together | Team-specific features |
+
+<CodeBlock language="tsx" filename="org-rollout.tsx">
+  {`// Pass organizationId for org-level rollouts
+  <FlagsProvider
+    clientId="your-website-id"
+    user={{
+      userId: "user_123",
+      email: "user@company.com",
+      organizationId: "org_abc",  // All org members get same result
+      teamId: "team_456",         // All team members get same result
+    }}
+  >
+    <App />
+  </FlagsProvider>`}
+</CodeBlock>
+
+<Callout type="info">
+  **Consistent Group Rollouts**: When using organization or team rollouts, all members with the same ID get the same flag result. If `org_abc` falls within the 25% rollout, all its members see the feature.
+</Callout>
+
 ### Multivariant Flags (A/B/n Testing)
 
 Run experiments with multiple variants. Each user is consistently assigned to a variant based on their identifier.
@@ -275,16 +305,13 @@ Run experiments with multiple variants. Each user is consistently assigned to a 
     user={{
       userId: currentUser.id,
       email: currentUser.email,
+      organizationId: currentUser.organizationId,  // For org-level rollouts
+      teamId: currentUser.teamId,                  // For team-level rollouts
       properties: {
         plan: currentUser.plan || 'free',
         role: currentUser.role || 'user',
-        organization: currentUser.organizationId,
         region: currentUser.region || 'us-east',
         signupDate: currentUser.createdAt,
-        featureUsage: {
-          reportsViewed: currentUser.reportsViewed || 0,
-          dashboardsCreated: currentUser.dashboardsCreated || 0,
-        }
       }
     }}
     isPending={isLoadingSession}
@@ -312,6 +339,16 @@ Run experiments with multiple variants. Each user is consistently assigned to a 
 | `staleTime` | number | `30000` | Revalidate after (30 seconds) |
 | `autoFetch` | boolean | `true` | Auto-fetch flags on mount |
 | `skipStorage` | boolean | `false` | Skip localStorage caching |
+
+### User Context Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `userId` | string | Unique user identifier for per-user rollouts |
+| `email` | string | User email (alternative identifier) |
+| `organizationId` | string | Organization ID for org-level rollouts |
+| `teamId` | string | Team ID for team-level rollouts |
+| `properties` | object | Custom properties for targeting rules |
 
 ## Advanced Context API
 
@@ -433,7 +470,26 @@ Target specific users or groups from your dashboard:
 
 - **User ID**: Target specific users by their unique identifier
 - **Email**: Target by email address or domain (e.g., `@company.com`)
+- **Organization**: Roll out to entire organizations at once
+- **Team**: Roll out to specific teams
 - **Custom Properties**: Target by user attributes
+
+### Organization & Team Rollouts
+
+For enterprise features or billing changes that should apply to all members of an organization:
+
+<CodeBlock language="tsx">
+  {`<FlagsProvider
+    user={{
+      userId: "user-123",
+      email: "user@company.com",
+      organizationId: "org_abc",  // All org members get same result
+      teamId: "team_456",         // All team members get same result
+    }}
+  >`}
+</CodeBlock>
+
+Then in the dashboard, set the **Rollout Unit** to "Organization" or "Team" when configuring your rollout flag.
 
 ### Advanced Targeting with Custom Properties
 
@@ -442,6 +498,8 @@ Target specific users or groups from your dashboard:
     user={{
       userId: "user-123",
       email: "user@example.com",
+      organizationId: "org_abc",
+      teamId: "team_456",
       properties: {
         plan: 'premium',           // Plan-based rollouts
         region: 'us-east',         // Geographic targeting

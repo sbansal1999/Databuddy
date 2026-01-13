@@ -2,7 +2,7 @@ import { AutumnProvider } from "autumn-js/react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { BillingProvider } from "@/components/providers/billing-provider";
 
-export default function DemoLayout({
+export default async function DemoLayout({
 	children,
 }: {
 	children: React.ReactNode;

@@ -67,18 +67,18 @@ export function record<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
 		try {
 			const result = await fn();
 			const duration = Date.now() - startTime;
-			span.setAttribute("operation.duration_ms", duration);
+			span.setAttribute("duration_ms", duration);
 
 			if (duration > 1000) {
-				span.setAttribute("operation.slow", true);
-				span.setAttribute("operation.duration_seconds", duration / 1000);
+				span.setAttribute("slow", true);
+				span.setAttribute("duration_seconds", duration / 1000);
 			}
 
 			span.setStatus({ code: SpanStatusCode.OK });
 			return result;
 		} catch (error) {
 			const duration = Date.now() - startTime;
-			span.setAttribute("operation.duration_ms", duration);
+			span.setAttribute("duration_ms", duration);
 			span.setStatus({
 				code: SpanStatusCode.ERROR,
 				message: error instanceof Error ? error.message : String(error),
@@ -94,20 +94,28 @@ export function record<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
 }
 
 /**
- * Capture error in active span
+ * Capture error in active span and log to console
  */
 export function captureError(
 	error: unknown,
 	attributes?: Record<string, string | number | boolean>
 ): void {
+	const errorObj = error instanceof Error ? error : new Error(String(error));
+	const errorMessage = errorObj.message;
+	const errorStack = errorObj.stack;
+
+	console.error("[uptime] Error:", errorMessage, {
+		error: errorMessage,
+		stack: errorStack,
+		...(attributes ?? {}),
+	});
+
 	const span = trace.getActiveSpan();
 	if (!span) {
 		return;
 	}
 
-	span.recordException(
-		error instanceof Error ? error : new Error(String(error))
-	);
+	span.recordException(errorObj);
 	span.setStatus({ code: SpanStatusCode.ERROR });
 
 	if (attributes) {
@@ -143,9 +151,9 @@ export function startRequestSpan(
 	return tracer.startSpan(`${method} ${route ?? path}`, {
 		kind: 1, // SERVER
 		attributes: {
-			"http.method": method,
-			"http.route": route ?? path,
-			"http.target": path,
+			http_method: method,
+			http_route: route ?? path,
+			http_target: path,
 		},
 	});
 }
@@ -159,12 +167,12 @@ export function endRequestSpan(
 	startTime: number
 ): void {
 	const duration = Date.now() - startTime;
-	span.setAttribute("http.status_code", statusCode);
-	span.setAttribute("http.response.duration_ms", duration);
+	span.setAttribute("http_status_code", statusCode);
+	span.setAttribute("http_response_duration_ms", duration);
 
 	if (duration > 500) {
-		span.setAttribute("http.slow", true);
-		span.setAttribute("http.duration_seconds", duration / 1000);
+		span.setAttribute("http_slow", true);
+		span.setAttribute("http_duration_seconds", duration / 1000);
 	}
 
 	span.setStatus({

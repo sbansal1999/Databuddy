@@ -20,6 +20,9 @@ import type {
 	UserContext,
 } from "./types";
 
+/** Storage key for anonymous ID (shared with tracker) */
+const ANONYMOUS_ID_KEY = "did";
+
 /**
  * Core flags manager - lightweight API client with best practices:
  * - Stale-while-revalidate caching
@@ -27,6 +30,7 @@ import type {
  * - Request deduplication
  * - Visibility API awareness (pause when hidden)
  * - Optimistic storage hydration
+ * - Automatic anonymous ID for gradual rollouts
  */
 export class CoreFlagsManager implements FlagsManager {
 	private config: FlagsConfig;
@@ -70,11 +74,54 @@ export class CoreFlagsManager implements FlagsManager {
 		this.initialize();
 	}
 
+	/**
+	 * Get or create anonymous ID for deterministic rollouts.
+	 * Uses the same storage key as the tracker ("did") for consistency.
+	 */
+	private getOrCreateAnonymousId(): string | null {
+		if (typeof localStorage === "undefined") {
+			return null;
+		}
+
+		try {
+			let id = localStorage.getItem(ANONYMOUS_ID_KEY);
+			if (id) {
+				return id;
+			}
+
+			id = `anon_${crypto.randomUUID()}`;
+			localStorage.setItem(ANONYMOUS_ID_KEY, id);
+			return id;
+		} catch {
+			// localStorage might be blocked (private browsing, etc.)
+			return null;
+		}
+	}
+
+	/**
+	 * Ensure user context has an identifier for deterministic flag evaluation.
+	 * If no userId/email provided, inject anonymous ID as userId.
+	 */
+	private ensureUserIdentity(user?: UserContext): UserContext | undefined {
+		// If user already has identification, use as-is
+		if (user?.userId || user?.email) {
+			return user;
+		}
+
+		const anonymousId = this.getOrCreateAnonymousId();
+		if (!anonymousId) {
+			return user;
+		}
+
+		// Inject anonymous ID as userId for deterministic rollouts
+		return { ...user, userId: anonymousId };
+	}
+
 	private withDefaults(config: FlagsConfig): FlagsConfig {
 		return {
 			clientId: config.clientId,
 			apiUrl: config.apiUrl ?? "https://api.databuddy.cc",
-			user: config.user,
+			user: this.ensureUserIdentity(config.user),
 			disabled: config.disabled ?? false,
 			debug: config.debug ?? false,
 			skipStorage: config.skipStorage ?? false,
@@ -420,7 +467,7 @@ export class CoreFlagsManager implements FlagsManager {
 	 * Update user context and refresh flags
 	 */
 	updateUser(user: UserContext): void {
-		this.config = { ...this.config, user };
+		this.config = { ...this.config, user: this.ensureUserIdentity(user) };
 
 		// Recreate batcher with new user params
 		this.batcher?.destroy();

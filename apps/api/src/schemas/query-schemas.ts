@@ -79,20 +79,20 @@ export const CompileRequestSchema = t.Object({
 	offset: t.Optional(t.Number({ minimum: 0 })),
 });
 
-export type FilterType = {
+export interface FilterType {
 	field: string;
 	op:
-		| "eq"
-		| "ne"
-		| "contains"
-		| "not_contains"
-		| "starts_with"
-		| "in"
-		| "not_in";
+	| "eq"
+	| "ne"
+	| "contains"
+	| "not_contains"
+	| "starts_with"
+	| "in"
+	| "not_in";
 	value: string | number | Array<string | number>;
 };
 
-export type ParameterWithDatesType = {
+export interface ParameterWithDatesType {
 	name: string;
 	start_date?: string;
 	end_date?: string;
@@ -100,7 +100,7 @@ export type ParameterWithDatesType = {
 	id?: string;
 };
 
-export type DynamicQueryRequestType = {
+export interface DynamicQueryRequestType {
 	id?: string;
 	parameters: (string | ParameterWithDatesType)[];
 	limit?: number;
@@ -113,7 +113,7 @@ export type DynamicQueryRequestType = {
 	timeZone?: string;
 };
 
-export type CompileRequestType = {
+export interface CompileRequestType {
 	projectId: string;
 	type: keyof typeof QueryBuilders;
 	from: string;

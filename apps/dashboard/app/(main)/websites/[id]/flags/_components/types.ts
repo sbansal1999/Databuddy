@@ -15,6 +15,7 @@ export interface Flag {
 	defaultValue?: boolean;
 	payload?: unknown;
 	rolloutPercentage?: number | null;
+	rolloutBy?: string | null;
 	rules?: UserRule[];
 	targetGroups?: TargetGroup[] | string[];
 	targetGroupIds?: string[];

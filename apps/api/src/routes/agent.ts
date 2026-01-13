@@ -84,9 +84,9 @@ export const agent = new Elysia({ prefix: "/v1/agent" })
 				const chatId = body.id ?? crypto.randomUUID();
 
 				setAttributes({
-					"agent.website_id": body.websiteId,
-					"agent.user_id": user?.id ?? "unknown",
-					"agent.chat_id": chatId,
+					agent_website_id: body.websiteId,
+					agent_user_id: user?.id ?? "unknown",
+					agent_chat_id: chatId,
 				});
 
 				try {

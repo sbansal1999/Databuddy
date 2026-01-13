@@ -11,6 +11,10 @@ export interface FlagResult {
 export interface UserContext {
 	userId?: string;
 	email?: string;
+	/** Organization ID for org-level rollouts (all org members get same result) */
+	organizationId?: string;
+	/** Team ID for team-level rollouts (all team members get same result) */
+	teamId?: string;
 	properties?: Record<string, unknown>;
 }
 

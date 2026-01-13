@@ -54,6 +54,7 @@ export const flagFormSchema = z
 		status: z.enum(["active", "inactive", "archived"]),
 		defaultValue: z.boolean(),
 		rolloutPercentage: z.number().min(0).max(100),
+		rolloutBy: z.string().optional(),
 		rules: z.array(userRuleSchema).optional(),
 		variants: z.array(variantSchema).optional(),
 		dependencies: z

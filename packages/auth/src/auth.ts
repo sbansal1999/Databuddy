@@ -16,6 +16,7 @@ import {
 	emailOTP,
 	lastLoginMethod,
 	magicLink,
+	multiSession,
 	organization,
 	twoFactor,
 } from "better-auth/plugins";
@@ -162,6 +163,9 @@ export const auth = betterAuth({
 		},
 	},
 	plugins: [
+		multiSession({
+			maximumSessions: 5,
+		}),
 		lastLoginMethod({
 			customResolveMethod: (ctx) => {
 				if (

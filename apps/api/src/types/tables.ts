@@ -26,7 +26,7 @@ export const Analytics = {
 
 export type AnalyticsTable = (typeof Analytics)[keyof typeof Analytics];
 
-export type TableFieldsMap = {
+export interface TableFieldsMap {
 	"analytics.events": keyof AnalyticsEvent;
 	"analytics.error_spans": keyof ErrorSpanRow;
 	"analytics.error_hourly": keyof ErrorHourlyAggregate;
@@ -37,4 +37,4 @@ export type TableFieldsMap = {
 	"analytics.blocked_traffic": keyof BlockedTraffic;
 	"analytics.outgoing_links": keyof CustomOutgoingLink;
 	"uptime.uptime_monitor": keyof UptimeMonitor;
-};
+}

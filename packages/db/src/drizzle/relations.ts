@@ -12,6 +12,7 @@ import {
 	targetGroups,
 	team,
 	twoFactor,
+	uptimeSchedules,
 	user,
 	userPreferences,
 	websites,
@@ -168,3 +169,14 @@ export const flagsToTargetGroupsRelations = relations(
 		}),
 	})
 );
+
+export const uptimeSchedulesRelations = relations(uptimeSchedules, ({ one }) => ({
+	website: one(websites, {
+		fields: [uptimeSchedules.websiteId],
+		references: [websites.id],
+	}),
+	user: one(user, {
+		fields: [uptimeSchedules.userId],
+		references: [user.id],
+	}),
+}));

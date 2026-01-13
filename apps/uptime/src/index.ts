@@ -2,6 +2,7 @@ import { Receiver } from "@upstash/qstash";
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { checkUptime, lookupSchedule } from "./actions";
+import type { JsonParsingConfig } from "./json-parser";
 import { sendUptimeEvent } from "./lib/producer";
 import {
 	captureError,
@@ -14,28 +15,23 @@ import {
 initTracing();
 
 process.on("unhandledRejection", (reason, _promise) => {
-	console.error("Unhandled Rejection:", reason);
-	captureError(reason);
+	captureError(reason, { type: "unhandledRejection" });
 });
 
 process.on("uncaughtException", (error) => {
-	console.error("Uncaught Exception:", error);
-	captureError(error);
+	captureError(error, { type: "uncaughtException" });
+	process.exit(1);
 });
 
 process.on("SIGTERM", async () => {
-	console.log("SIGTERM received, shutting down gracefully...");
-	await shutdownTracing().catch((error) =>
-		console.error("Shutdown error:", error)
-	);
+	await shutdownTracing().catch(() => {
+	});
 	process.exit(0);
 });
 
 process.on("SIGINT", async () => {
-	console.log("SIGINT received, shutting down gracefully...");
-	await shutdownTracing().catch((error) =>
-		console.error("Shutdown error:", error)
-	);
+	await shutdownTracing().catch(() => {
+	});
 	process.exit(0);
 });
 
@@ -80,13 +76,11 @@ const app = new Elysia()
 			const statusCode = code === "NOT_FOUND" ? 404 : 500;
 			endRequestSpan(store.tracing.span, statusCode, store.tracing.startTime);
 		}
-		captureError(error);
+		captureError(error, { type: "elysia_error", code });
 	})
 	.get("/health", () => ({ status: "ok" }))
 	.post("/", async ({ headers, body }) => {
 		try {
-			console.log("Received headers:", JSON.stringify(headers, null, 2));
-
 			const headerSchema = z.object({
 				"upstash-signature": z.string(),
 				"x-schedule-id": z.string(),
@@ -95,11 +89,15 @@ const app = new Elysia()
 
 			const parsed = headerSchema.safeParse(headers);
 			if (!parsed.success) {
-				console.error("Header validation failed:", parsed.error.format());
+				const errorDetails = parsed.error.format();
+				captureError(new Error("Missing required headers"), {
+					type: "validation_error",
+					scheduleId: headers["x-schedule-id"] as string,
+				});
 				return new Response(
 					JSON.stringify({
 						error: "Missing required headers",
-						details: parsed.error.format(),
+						details: errorDetails,
 					}),
 					{
 						status: 400,
@@ -115,19 +113,23 @@ const app = new Elysia()
 				// @ts-expect-error, this doesn't require type assertions
 				body,
 				signature,
-				url: "https://uptime.databuddy.cc",
+				url: process.env.UPTIME_URL,
 			});
 
 			if (!isValid) {
+				captureError(new Error("Invalid QStash signature"), {
+					type: "auth_error",
+					scheduleId,
+				});
 				return new Response("Invalid signature", { status: 401 });
 			}
 
-			console.log(`Looking up schedule: ${scheduleId}`);
-
 			const schedule = await lookupSchedule(scheduleId);
 			if (!schedule.success) {
-				console.error(`Schedule lookup failed: ${schedule.error}`);
-				captureError(schedule.error);
+				captureError(new Error(schedule.error), {
+					type: "schedule_not_found",
+					scheduleId,
+				});
 				return new Response(
 					JSON.stringify({
 						error: "Schedule not found",
@@ -147,29 +149,53 @@ const app = new Elysia()
 				? Number.parseInt(parsed.data["upstash-retried"], 10) + 3
 				: 3;
 
+			const jsonParsingConfig = schedule.data.jsonParsingConfig as
+				| JsonParsingConfig
+				| null
+				| undefined;
+
 			const result = await checkUptime(
 				monitorId,
 				schedule.data.url,
 				1,
-				maxRetries
+				maxRetries,
+				jsonParsingConfig
 			);
 
 			if (!result.success) {
-				console.error("Uptime check failed:", result.error);
-				captureError(result.error);
+				captureError(new Error(result.error), {
+					type: "uptime_check_failed",
+					monitorId,
+					url: schedule.data.url,
+				});
+				console.error(
+					"[uptime] Failed to check uptime:",
+					monitorId,
+					schedule.data.url,
+					result.error
+				);
 				return new Response("Failed to check uptime", { status: 500 });
 			}
 
 			try {
 				await sendUptimeEvent(result.data, monitorId);
 			} catch (error) {
-				console.error("Failed to send uptime event:", error);
-				captureError(error);
+				captureError(error, {
+					type: "producer_error",
+					monitorId,
+					httpCode: result.data.http_code,
+				});
+				console.error(
+					"[uptime] Failed to send uptime event:",
+					monitorId,
+					error instanceof Error ? error.message : String(error)
+				);
 			}
 
 			return new Response("Uptime check complete", { status: 200 });
 		} catch (error) {
-			captureError(error);
+			captureError(error, { type: "unexpected_error" });
+			console.error("[uptime] Unexpected error in POST handler:", error);
 			return new Response("Internal server error", { status: 500 });
 		}
 	});

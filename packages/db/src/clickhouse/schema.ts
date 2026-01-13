@@ -456,6 +456,7 @@ CREATE TABLE IF NOT EXISTS ${DATABASES.UPTIME}.uptime_monitor (
     check_type LowCardinality(String) DEFAULT 'http',
     user_agent String DEFAULT 'uptime-monitor',
     error String DEFAULT '' CODEC(ZSTD(1)),
+    json_data String DEFAULT '' CODEC(ZSTD(1)),
     INDEX idx_site_id site_id TYPE bloom_filter(0.01) GRANULARITY 1,
     INDEX idx_status status TYPE minmax GRANULARITY 1,
     INDEX idx_timestamp timestamp TYPE minmax GRANULARITY 1
@@ -639,6 +640,7 @@ export interface UptimeMonitor {
 	check_type: string;
 	user_agent: string;
 	error: string;
+	json_data?: string;
 }
 
 /**

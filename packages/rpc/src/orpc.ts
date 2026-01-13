@@ -1,13 +1,5 @@
 import { auth, type User } from "@databuddy/auth";
-import {
-	and,
-	db,
-	eq,
-	member,
-	organization,
-	session as sessionTable,
-	user as userTable,
-} from "@databuddy/db";
+import { and, db, eq, member } from "@databuddy/db";
 import { os as createOS } from "@orpc/server";
 import { Autumn as autumn } from "autumn-js";
 import { baseErrors } from "./errors";
@@ -22,30 +14,38 @@ import {
  * If in an organization, returns the org owner's ID.
  * Otherwise, returns the current user's ID.
  */
-async function getBillingOwnerId(userId: string): Promise<{
+async function getBillingOwnerId(
+	userId: string,
+	activeOrganizationId: string | null | undefined
+): Promise<{
 	customerId: string;
 	isOrganization: boolean;
 	canUserUpgrade: boolean;
 	planId: string;
 }> {
-	const [orgResult] = await db
-		.select({
-			ownerId: userTable.id,
-			activeOrgId: sessionTable.activeOrganizationId,
-		})
-		.from(sessionTable)
-		.innerJoin(
-			organization,
-			eq(sessionTable.activeOrganizationId, organization.id)
-		)
-		.innerJoin(member, eq(organization.id, member.organizationId))
-		.innerJoin(userTable, eq(member.userId, userTable.id))
-		.where(and(eq(sessionTable.userId, userId), eq(member.role, "owner")))
-		.limit(1);
+	let customerId = userId;
+	let isOrganization = false;
+	let canUserUpgrade = true;
 
-	const customerId = orgResult?.ownerId || userId;
-	const isOrganization = Boolean(orgResult?.activeOrgId);
-	const canUserUpgrade = !isOrganization || orgResult?.ownerId === userId;
+	// If user has an active organization, get the org owner's billing
+	if (activeOrganizationId) {
+		const [orgOwner] = await db
+			.select({ ownerId: member.userId })
+			.from(member)
+			.where(
+				and(
+					eq(member.organizationId, activeOrganizationId),
+					eq(member.role, "owner")
+				)
+			)
+			.limit(1);
+
+		if (orgOwner) {
+			customerId = orgOwner.ownerId;
+			isOrganization = true;
+			canUserUpgrade = orgOwner.ownerId === userId;
+		}
+	}
 
 	// Get the plan from Autumn
 	let planId = "free";
@@ -86,7 +86,10 @@ export const createRPCContext = async (opts: { headers: Headers }) => {
 
 	if (session?.user) {
 		try {
-			billingContext = await getBillingOwnerId(session.user.id);
+			const activeOrgId = (
+				session.session as { activeOrganizationId?: string | null }
+			)?.activeOrganizationId;
+			billingContext = await getBillingOwnerId(session.user.id, activeOrgId);
 		} catch {
 			// If billing context fails, continue without it
 			billingContext = undefined;

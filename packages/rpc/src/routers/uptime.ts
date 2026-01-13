@@ -14,6 +14,7 @@ const client = new Client({ token: process.env.UPSTASH_QSTASH_TOKEN });
 
 const CRON_GRANULARITIES = {
 	minute: "* * * * *",
+	five_minutes: "*/5 * * * *",
 	ten_minutes: "*/10 * * * *",
 	thirty_minutes: "*/30 * * * *",
 	hour: "0 * * * *",
@@ -24,6 +25,7 @@ const CRON_GRANULARITIES = {
 
 const granularityEnum = z.enum([
 	"minute",
+	"five_minutes",
 	"ten_minutes",
 	"thirty_minutes",
 	"hour",
@@ -32,12 +34,14 @@ const granularityEnum = z.enum([
 	"day",
 ]);
 
-const UPTIME_URL_GROUP = process.env.UPTIME_URL_GROUP || "uptime";
+const isProd = process.env.NODE_ENV === "production";
+const UPTIME_URL_GROUP = isProd ? "uptime" : "uptime-staging";
 
 async function getScheduleAndAuthorize(
 	scheduleId: string,
 	context: Parameters<typeof authorizeUptimeScheduleAccess>[0]
 ) {
+
 	const schedule = await db.query.uptimeSchedules.findFirst({
 		where: eq(uptimeSchedules.id, scheduleId),
 	});
@@ -88,10 +92,11 @@ export const uptimeRouter = {
 		.input(z.object({ websiteId: z.string() }))
 		.handler(async ({ context, input }) => {
 			await authorizeWebsiteAccess(context, input.websiteId, "read");
-			return await db.query.uptimeSchedules.findFirst({
+			const schedule = await db.query.uptimeSchedules.findFirst({
 				where: eq(uptimeSchedules.websiteId, input.websiteId),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
 			});
+			return schedule ?? null;
 		}),
 
 	listSchedules: protectedProcedure
@@ -107,6 +112,7 @@ export const uptimeRouter = {
 			return await db.query.uptimeSchedules.findMany({
 				where: and(...conditions),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
+				with: { website: true },
 			});
 		}),
 
@@ -116,6 +122,7 @@ export const uptimeRouter = {
 			const [dbSchedule, qstashSchedule] = await Promise.all([
 				db.query.uptimeSchedules.findFirst({
 					where: eq(uptimeSchedules.id, input.scheduleId),
+					with: { website: true },
 				}),
 				client.schedules.get(input.scheduleId).catch(() => null),
 			]);
@@ -142,6 +149,13 @@ export const uptimeRouter = {
 				name: z.string().optional(),
 				websiteId: z.string().optional(),
 				granularity: granularityEnum,
+				jsonParsingConfig: z
+					.object({
+						enabled: z.boolean(),
+						mode: z.enum(["auto", "manual"]),
+						fields: z.array(z.string()).optional(),
+					})
+					.optional(),
 			})
 		)
 		.handler(async ({ context, input }) => {
@@ -178,6 +192,7 @@ export const uptimeRouter = {
 				granularity: input.granularity,
 				cron: CRON_GRANULARITIES[input.granularity],
 				isPaused: false,
+				jsonParsingConfig: input.jsonParsingConfig ?? null,
 			});
 
 			try {
@@ -195,38 +210,73 @@ export const uptimeRouter = {
 			triggerInitialCheck(scheduleId);
 			logger.info({ scheduleId, url: input.url }, "Schedule created");
 
+			const created = await db.query.uptimeSchedules.findFirst({
+				where: eq(uptimeSchedules.id, scheduleId),
+			});
+
 			return {
 				scheduleId,
 				url: input.url,
 				name: input.name,
 				granularity: input.granularity,
 				cron: CRON_GRANULARITIES[input.granularity],
+				jsonParsingConfig: created?.jsonParsingConfig ?? null,
 			};
 		}),
 
 	updateSchedule: protectedProcedure
-		.input(z.object({ scheduleId: z.string(), granularity: granularityEnum }))
+		.input(
+			z.object({
+				scheduleId: z.string(),
+				granularity: granularityEnum.optional(),
+				jsonParsingConfig: z
+					.object({
+						enabled: z.boolean(),
+						mode: z.enum(["auto", "manual"]),
+						fields: z.array(z.string()).optional(),
+					})
+					.optional(),
+			})
+		)
 		.handler(async ({ context, input }) => {
 			await getScheduleAndAuthorize(input.scheduleId, context);
 
-			await client.schedules.delete(input.scheduleId);
-			await createQStashSchedule(input.scheduleId, input.granularity);
+			const updateData: {
+				granularity?: string;
+				cron?: string;
+				jsonParsingConfig?: unknown;
+				updatedAt: Date;
+			} = {
+				updatedAt: new Date(),
+			};
+
+			if (input.granularity) {
+				await client.schedules.delete(input.scheduleId);
+				await createQStashSchedule(input.scheduleId, input.granularity);
+				updateData.granularity = input.granularity;
+				updateData.cron = CRON_GRANULARITIES[input.granularity];
+			}
+
+			if (input.jsonParsingConfig !== undefined) {
+				updateData.jsonParsingConfig = input.jsonParsingConfig;
+			}
 
 			await db
 				.update(uptimeSchedules)
-				.set({
-					granularity: input.granularity,
-					cron: CRON_GRANULARITIES[input.granularity],
-					updatedAt: new Date(),
-				})
+				.set(updateData)
 				.where(eq(uptimeSchedules.id, input.scheduleId));
 
 			logger.info({ scheduleId: input.scheduleId }, "Schedule updated");
 
+			const schedule = await db.query.uptimeSchedules.findFirst({
+				where: eq(uptimeSchedules.id, input.scheduleId),
+			});
+
 			return {
 				scheduleId: input.scheduleId,
-				granularity: input.granularity,
-				cron: CRON_GRANULARITIES[input.granularity],
+				granularity: schedule?.granularity,
+				cron: schedule?.cron,
+				jsonParsingConfig: schedule?.jsonParsingConfig ?? null,
 			};
 		}),
 

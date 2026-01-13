@@ -235,6 +235,12 @@ export const billingNavigation: NavigationSection[] = [
 	]),
 ];
 
+export const monitorsNavigation: NavigationSection[] = [
+	createNavSection("Monitoring", HeartbeatIcon, [
+		createNavItem("Overview", HeartbeatIcon, "/monitors"),
+	]),
+];
+
 export const websiteNavigation: NavigationSection[] = [
 	createNavSection("Web Analytics", ChartBarIcon, [
 		createNavItem("Dashboard", EyeIcon, "", { rootLevel: false }),
@@ -266,7 +272,7 @@ export const websiteNavigation: NavigationSection[] = [
 		}),
 		createNavItem("Events", LightningIcon, "/events", {
 			rootLevel: false,
-			flag: "events",
+			alpha: true,
 		}),
 		createNavItem("Funnels", FunnelIcon, "/funnels", {
 			rootLevel: false,
@@ -334,6 +340,13 @@ export const categoryConfig = {
 				production: true,
 			},
 			{
+				id: "monitors",
+				name: "Monitors",
+				icon: HeartbeatIcon,
+				production: true,
+				flag: "monitors",
+			},
+			{
 				id: "organizations",
 				name: "Organizations",
 				icon: BuildingsIcon,
@@ -362,6 +375,7 @@ export const categoryConfig = {
 		"websites",
 		{
 			websites: [],
+			monitors: monitorsNavigation,
 			organizations: organizationNavigation,
 			billing: billingNavigation,
 			settings: personalNavigation,
@@ -397,6 +411,7 @@ const PATH_CONFIG_MAP = [
 ] as const;
 
 const CATEGORY_PATH_MAP = [
+	{ pattern: "/monitors", category: "monitors" as const },
 	{ pattern: "/organizations", category: "organizations" as const },
 	{ pattern: "/billing", category: "billing" as const },
 	{ pattern: "/settings", category: "settings" as const },
@@ -413,7 +428,7 @@ export const getContextConfig = (pathname: string) => {
 
 export const getDefaultCategory = (pathname: string) => {
 	for (const { pattern, category } of CATEGORY_PATH_MAP) {
-		if (pathname.startsWith(pattern)) {
+		if (pathname.includes(pattern)) {
 			return category;
 		}
 	}

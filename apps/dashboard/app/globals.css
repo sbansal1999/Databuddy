@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "react-grid-layout/css/styles.css";
 
 @source "../node_modules/streamdown/dist/*.js";
 

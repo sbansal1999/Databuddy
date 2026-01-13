@@ -79,7 +79,7 @@ const removeWebsiteFromList = (
 	};
 };
 
-export function useWebsites() {
+export function useWebsites(options?: { enabled?: boolean }) {
 	const { activeOrganization, isLoading: isLoadingOrganization } =
 		useOrganizationsContext();
 
@@ -87,7 +87,7 @@ export function useWebsites() {
 		...orpc.websites.listWithCharts.queryOptions({
 			input: { organizationId: activeOrganization?.id },
 		}),
-		enabled: !isLoadingOrganization,
+		enabled: options?.enabled !== false && !isLoadingOrganization,
 	});
 
 	return {

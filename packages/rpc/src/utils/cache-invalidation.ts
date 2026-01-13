@@ -41,6 +41,9 @@ export const invalidateWebsiteCaches = async (
 			// The cacheable function creates keys with format: "cacheable:{prefix}:{args}"
 			redisCache.del(`cacheable:website_by_id:${websiteId}`),
 
+			redisCache.del(`cacheable:website-cache:${websiteId}`),
+			redisCache.del(`cacheable:website-domain:${websiteId}`),
+
 			createDrizzleCache({ redis, namespace: "auth" }).invalidateByKey(
 				`auth:${userId}:${websiteId}`
 			),

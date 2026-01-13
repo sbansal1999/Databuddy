@@ -23,6 +23,7 @@ import {
 	getContextConfig,
 	getDefaultCategory,
 } from "./navigation/navigation-config";
+import { PendingInvitationsButton } from "./pending-invitations-button";
 import { ProfileButtonClient } from "./profile-button-client";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -52,7 +53,9 @@ export function CategorySidebar({
 	user = null,
 }: CategorySidebarProps) {
 	const pathname = usePathname();
-	const { websites, isLoading: isLoadingWebsites } = useWebsites();
+	const { websites, isLoading: isLoadingWebsites } = useWebsites({
+		enabled: user !== null,
+	});
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { isOn } = useFlags();
 
@@ -177,9 +180,14 @@ export function CategorySidebar({
 					</div>
 
 					{user ? (
-						<div className="flex justify-center">
-							<ProfileButtonClient user={user} />
-						</div>
+						<>
+							<div className="flex justify-center">
+								<PendingInvitationsButton />
+							</div>
+							<div className="flex justify-center">
+								<ProfileButtonClient user={user} />
+							</div>
+						</>
 					) : null}
 				</div>
 

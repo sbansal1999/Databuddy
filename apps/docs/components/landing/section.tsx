@@ -19,7 +19,7 @@ const Section = ({
 }) => (
 	<div
 		className={cn(
-			"relative w-full border-x-0 lg:border-x",
+			"relative w-full",
 			!customPaddings && "py-12 sm:py-16 lg:py-24 xl:py-32",
 			className
 		)}

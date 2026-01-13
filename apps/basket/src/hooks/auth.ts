@@ -355,7 +355,7 @@ const getWebsiteByIdWithOwnerCached = cacheable(
 export function getWebsiteByIdV2(id: string): Promise<WebsiteWithOwner | null> {
 	return record("getWebsiteByIdV2", async () => {
 		setAttributes({
-			"website.id": id,
+			website_id: id,
 		});
 
 		try {
@@ -363,13 +363,13 @@ export function getWebsiteByIdV2(id: string): Promise<WebsiteWithOwner | null> {
 
 			if (result) {
 				setAttributes({
-					"website.found": true,
-					"website.status": result.status,
-					"website.has_owner": Boolean(result.ownerId),
+					website_found: true,
+					website_status: result.status,
+					website_has_owner: Boolean(result.ownerId),
 				});
 			} else {
 				setAttributes({
-					"website.found": false,
+					website_found: false,
 				});
 			}
 
@@ -380,7 +380,7 @@ export function getWebsiteByIdV2(id: string): Promise<WebsiteWithOwner | null> {
 				websiteId: id,
 			});
 			setAttributes({
-				"website.lookup_failed": true,
+				website_lookup_failed: true,
 			});
 			return null;
 		}

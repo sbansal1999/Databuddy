@@ -2,21 +2,30 @@
 
 import { authClient } from "@databuddy/auth/client";
 import {
-	ArrowRight,
-	Buildings,
-	CheckCircle,
-	CircleNotch,
-	Clock,
-	Sparkle,
-	UserPlus,
-	XCircle,
+	ArrowRightIcon,
+	BuildingsIcon,
+	CheckCircleIcon,
+	ClockIcon,
+	SpinnerGapIcon,
+	UserPlusIcon,
+	XCircleIcon,
 } from "@phosphor-icons/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { orpc } from "@/lib/orpc";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "../../websites/_components/page-header";
 
-type InvitationData = {
+dayjs.extend(relativeTime);
+
+interface InvitationData {
 	organizationName: string;
 	organizationSlug: string;
 	inviterEmail: string;
@@ -27,437 +36,396 @@ type InvitationData = {
 	organizationId: string;
 	role: string;
 	inviterId: string;
-	teamId?: string | undefined;
-};
+	teamId?: string;
+}
+
+type ActionStatus = "idle" | "accepting" | "success";
+
+function ContentSkeleton() {
+	return (
+		<div className="flex flex-1 items-center justify-center p-8">
+			<div className="w-full max-w-md space-y-6">
+				<div className="flex justify-center">
+					<Skeleton className="size-16 rounded" />
+				</div>
+				<div className="space-y-3 text-center">
+					<Skeleton className="mx-auto h-7 w-48" />
+					<Skeleton className="mx-auto h-5 w-64" />
+				</div>
+				<div className="space-y-4 rounded border p-4">
+					<div className="flex items-center gap-3">
+						<Skeleton className="size-10 rounded" />
+						<div className="flex-1 space-y-2">
+							<Skeleton className="h-4 w-32" />
+							<Skeleton className="h-3 w-24" />
+						</div>
+					</div>
+					<div className="flex items-center gap-3">
+						<Skeleton className="size-10 rounded" />
+						<div className="flex-1 space-y-2">
+							<Skeleton className="h-4 w-28" />
+							<Skeleton className="h-3 w-40" />
+						</div>
+					</div>
+				</div>
+				<div className="flex gap-3">
+					<Skeleton className="h-10 flex-1" />
+					<Skeleton className="h-10 w-28" />
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function formatRole(role: string) {
+	return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+}
+
+function InvitationDetails({
+	invitation,
+	actionStatus,
+	onAcceptAction,
+	onDeclineAction,
+}: {
+	invitation: InvitationData;
+	actionStatus: ActionStatus;
+	onAcceptAction: () => void;
+	onDeclineAction: () => void;
+}) {
+	const isExpiringSoon = dayjs(invitation.expiresAt).diff(dayjs(), "day") <= 1;
+
+	return (
+		<div className="flex flex-1 items-center justify-center p-4 sm:p-8">
+			<div className="w-full max-w-md space-y-6">
+				<div className="flex justify-center">
+					<div className="rounded border bg-secondary p-4">
+						<UserPlusIcon
+							className="size-8 text-accent-foreground"
+							weight="fill"
+						/>
+					</div>
+				</div>
+
+				<div className="space-y-2 text-balance text-center">
+					<h2 className="font-medium text-foreground text-xl">
+						You're invited to join
+					</h2>
+					<p className="font-medium text-2xl text-foreground">
+						{invitation.organizationName}
+					</p>
+					<p className="text-muted-foreground text-sm">
+						<span className="font-medium text-foreground">
+							{invitation.inviterEmail}
+						</span>{" "}
+						invited you as a{" "}
+						<Badge className="ml-1" variant="secondary">
+							{formatRole(invitation.role)}
+						</Badge>
+					</p>
+				</div>
+
+				<div className="space-y-3 rounded border bg-card p-4">
+					<div className="flex items-center gap-3">
+						<div className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary">
+							<BuildingsIcon
+								className="size-5 text-accent-foreground"
+								weight="duotone"
+							/>
+						</div>
+						<div className="min-w-0 flex-1">
+							<p className="font-medium text-foreground text-sm">
+								{invitation.organizationName}
+							</p>
+							<p className="text-muted-foreground text-xs">
+								{invitation.organizationSlug
+									? `@${invitation.organizationSlug}`
+									: "Organization"}
+							</p>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-3">
+						<div
+							className={cn(
+								"flex size-10 shrink-0 items-center justify-center rounded",
+								isExpiringSoon ? "bg-amber-500/10" : "bg-secondary"
+							)}
+						>
+							<ClockIcon
+								className={cn(
+									"size-5",
+									isExpiringSoon
+										? "text-amber-600 dark:text-amber-400"
+										: "text-accent-foreground"
+								)}
+								weight="duotone"
+							/>
+						</div>
+						<div className="min-w-0 flex-1">
+							<p className="font-medium text-foreground text-sm">
+								{isExpiringSoon ? "Expires soon" : "Expires"}
+							</p>
+							<p className="text-muted-foreground text-xs">
+								{dayjs(invitation.expiresAt).fromNow()}
+							</p>
+						</div>
+						{isExpiringSoon && <Badge variant="amber">Expiring</Badge>}
+					</div>
+				</div>
+
+				<div className="flex flex-col gap-3 sm:flex-row">
+					<Button
+						className="flex-1 gap-2"
+						disabled={actionStatus !== "idle"}
+						onClick={onAcceptAction}
+					>
+						{actionStatus === "accepting" ? (
+							<SpinnerGapIcon className="size-4 animate-spin" />
+						) : (
+							<UserPlusIcon className="size-4" weight="duotone" />
+						)}
+						{actionStatus === "accepting" ? "Joining…" : "Join Organization"}
+					</Button>
+					<Button
+						disabled={actionStatus !== "idle"}
+						onClick={onDeclineAction}
+						variant="outline"
+					>
+						Maybe Later
+					</Button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function SuccessState({ organizationName }: { organizationName: string }) {
+	const router = useRouter();
+
+	return (
+		<div className="flex flex-1 items-center justify-center p-4 sm:p-8">
+			<div className="w-full max-w-md space-y-6 text-center">
+				<div className="flex justify-center">
+					<div className="rounded border border-green-500/20 bg-green-500/10 p-4">
+						<CheckCircleIcon
+							className="size-8 text-green-600 dark:text-green-400"
+							weight="fill"
+						/>
+					</div>
+				</div>
+
+				<div className="space-y-2 text-balance">
+					<h2 className="font-medium text-foreground text-xl">
+						Welcome to {organizationName}!
+					</h2>
+					<p className="text-muted-foreground text-sm">
+						You now have access to all projects and resources.
+					</p>
+				</div>
+
+				<Button className="gap-2" onClick={() => router.push("/websites")}>
+					Go to Dashboard
+					<ArrowRightIcon className="size-4" />
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+function ExpiredState() {
+	const router = useRouter();
+
+	return (
+		<EmptyState
+			action={{
+				label: "Back to Home",
+				onClick: () => router.push("/websites"),
+			}}
+			description="This invitation has expired or is no longer valid. Please contact the organization admin for a new invitation."
+			icon={<XCircleIcon />}
+			title="Invitation Expired"
+			variant="error"
+		/>
+	);
+}
+
+function AlreadyMemberState({
+	organizationName,
+}: {
+	organizationName: string;
+}) {
+	const router = useRouter();
+
+	return (
+		<EmptyState
+			action={{
+				label: "Go to Dashboard",
+				onClick: () => router.push("/websites"),
+			}}
+			description={`You're already a member of ${organizationName}.`}
+			icon={<CheckCircleIcon />}
+			title="Already a Member"
+			variant="minimal"
+		/>
+	);
+}
+
+function ErrorState({ message }: { message: string }) {
+	const router = useRouter();
+
+	return (
+		<EmptyState
+			action={{
+				label: "Back to Home",
+				onClick: () => router.push("/websites"),
+			}}
+			description={message}
+			icon={<XCircleIcon />}
+			title="Something went wrong"
+			variant="error"
+		/>
+	);
+}
 
 export default function AcceptInvitationPage() {
 	const router = useRouter();
 	const params = useParams();
+	const queryClient = useQueryClient();
 	const invitationId = params.id as string;
 
-	const [status, setStatus] = useState<
-		| "loading"
-		| "ready"
-		| "accepting"
-		| "success"
-		| "error"
-		| "expired"
-		| "already-accepted"
-	>("loading");
-	const [invitation, setInvitation] = useState<InvitationData | null>(null);
-	const [error, setError] = useState<string>("");
+	const [actionStatus, setActionStatus] = useState<ActionStatus>("idle");
 
-	useEffect(() => {
-		const fetchInvitation = async () => {
-			try {
-				if (!invitationId) {
-					setStatus("error");
-					setError("Invalid invitation link");
-					return;
-				}
+	const {
+		data: invitation,
+		isLoading,
+		error,
+	} = useQuery({
+		queryKey: ["invitation", invitationId],
+		queryFn: async () => {
+			const { data, error: fetchError } =
+				await authClient.organization.getInvitation({
+					query: { id: invitationId },
+				});
 
-				const { data: invitationData, error: invitationError } =
-					await authClient.organization.getInvitation({
-						query: { id: invitationId },
-					});
-
-				if (invitationError || !invitationData) {
-					if (
-						invitationError?.message?.includes("expired") ||
-						invitationError?.message?.includes("not found")
-					) {
-						setStatus("expired");
-					} else {
-						setStatus("error");
-						setError(invitationError?.message || "Failed to load invitation");
-					}
-					return;
-				}
-
-				setInvitation(invitationData);
-
-				if (invitationData.status === "accepted") {
-					setStatus("already-accepted");
-				} else if (
-					invitationData.status === "canceled" ||
-					invitationData.status === "rejected" ||
-					new Date(invitationData.expiresAt) < new Date()
-				) {
-					setStatus("expired");
-				} else {
-					setStatus("ready");
-				}
-			} catch (err: any) {
-				console.error("Error fetching invitation:", err);
-				setStatus("error");
-				setError(err.message || "An unexpected error occurred");
+			if (fetchError || !data) {
+				throw new Error(fetchError?.message || "Failed to load invitation");
 			}
-		};
 
-		fetchInvitation();
-	}, [invitationId]);
+			return data as InvitationData;
+		},
+		enabled: Boolean(invitationId),
+		retry: false,
+	});
 
-	const handleAcceptInvitation = async () => {
+	const handleAccept = useCallback(async () => {
 		if (!invitation) {
 			return;
 		}
 
-		setStatus("accepting");
-		try {
-			const result = await authClient.organization.acceptInvitation({
-				invitationId,
-			});
+		setActionStatus("accepting");
 
-			if (result.data) {
-				setStatus("success");
-				setTimeout(() => {
-					router.push("/websites");
-				}, 3000);
-			} else {
-				setStatus("error");
-				setError("Failed to accept invitation");
-			}
-		} catch (err: any) {
-			console.error("Error accepting invitation:", err);
-			setStatus("error");
-			setError(err.message || "Failed to accept invitation");
-		}
-	};
-
-	const handleDecline = () => {
-		router.push("/websites");
-	};
-
-	const formatRole = (role: string) =>
-		role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-
-	const formatExpiryDate = (expiresAt: string) => {
-		const date = new Date(expiresAt);
-		return date.toLocaleDateString("en-US", {
-			month: "long",
-			day: "numeric",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
+		const result = await authClient.organization.acceptInvitation({
+			invitationId,
 		});
-	};
 
-	const renderContent = () => {
-		switch (status) {
-			case "loading":
-				return (
-					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-						<div className="relative mb-8">
-							<div className="rounded-full border bg-muted/50 p-8">
-								<CircleNotch className="size-16 animate-spin text-primary" />
-							</div>
-						</div>
-						<h3 className="mb-4 font-bold text-2xl">Loading Invitation</h3>
-						<p className="text-muted-foreground leading-relaxed">
-							Fetching invitation details...
-						</p>
-					</div>
-				);
-
-			case "ready":
-				return (
-					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-						<div className="relative mb-8">
-							<div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
-							<div className="relative rounded-full border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-6">
-								<UserPlus className="size-12 text-primary" weight="duotone" />
-							</div>
-							<Sparkle
-								className="absolute -top-2 -right-2 size-6 animate-pulse text-primary/60"
-								weight="duotone"
-							/>
-							<Sparkle
-								className="absolute -bottom-1 -left-3 size-4 animate-pulse text-primary/40"
-								style={{ animationDelay: "1s" }}
-								weight="duotone"
-							/>
-						</div>
-
-						<div className="mb-8 space-y-4">
-							<h3 className="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text font-bold text-2xl text-transparent">
-								You're Invited!
-							</h3>
-							<p className="max-w-md text-lg text-muted-foreground leading-relaxed">
-								<span className="font-semibold text-foreground">
-									{invitation?.inviterEmail}
-								</span>{" "}
-								has invited you to join{" "}
-								<span className="font-semibold text-foreground">
-									{invitation?.organizationName}
-								</span>{" "}
-								as a{" "}
-								<span className="font-semibold text-primary">
-									{formatRole(invitation?.role || "")}
-								</span>
-								.
-							</p>
-						</div>
-
-						<div className="mb-8 w-full max-w-md rounded-xl border border-border/50 bg-muted/50 p-6">
-							<div className="mb-4 flex items-start gap-3">
-								<div className="rounded-lg bg-primary/10 p-2">
-									<Buildings className="size-5 text-primary" weight="duotone" />
-								</div>
-								<div className="flex-1 text-left">
-									<p className="mb-1 font-semibold text-sm">
-										Organization Details
-									</p>
-									<p className="text-muted-foreground text-sm">
-										{invitation?.organizationName}
-									</p>
-									<p className="mt-1 text-muted-foreground text-xs">
-										Role: {formatRole(invitation?.role || "")}
-									</p>
-								</div>
-							</div>
-
-							<div className="flex items-start gap-3">
-								<div className="rounded-lg bg-orange-100 p-2 dark:bg-orange-900/20">
-									<Clock
-										className="size-5 text-orange-600 dark:text-orange-400"
-										weight="duotone"
-									/>
-								</div>
-								<div className="flex-1 text-left">
-									<p className="mb-1 font-semibold text-sm">Expires</p>
-									<p className="text-muted-foreground text-xs">
-										{formatExpiryDate(invitation?.expiresAt.toString() || "")}
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div className="flex w-full max-w-md flex-col gap-3 sm:flex-row">
-							<Button
-								className="group relative flex-1 gap-3 overflow-hidden rounded px-8 py-6 font-medium text-lg"
-								onClick={handleAcceptInvitation}
-								size="lg"
-							>
-								<UserPlus
-									className="relative z-10 size-5 transition-transform duration-300 group-hover:scale-110"
-									weight="duotone"
-								/>
-								<span className="relative z-10">Join Organization</span>
-								<ArrowRight className="relative z-10 size-5 transition-transform duration-300 group-hover:translate-x-1" />
-							</Button>
-
-							<Button
-								className="flex-1 rounded px-8 py-6 font-medium text-lg sm:flex-initial"
-								onClick={handleDecline}
-								size="lg"
-								variant="outline"
-							>
-								Maybe Later
-							</Button>
-						</div>
-					</div>
-				);
-
-			case "accepting":
-				return (
-					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-						<div className="relative mb-8">
-							<div className="rounded-full border border-accent bg-accent/50 p-8">
-								<CircleNotch className="size-16 animate-spin text-primary" />
-							</div>
-						</div>
-						<h3 className="mb-4 font-bold text-2xl">Joining Organization</h3>
-						<p className="text-muted-foreground leading-relaxed">
-							Adding you to{" "}
-							<span className="font-semibold text-foreground">
-								{invitation?.organizationName}
-							</span>
-							...
-						</p>
-					</div>
-				);
-
-			case "success":
-				return (
-					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-						<div className="relative mb-8">
-							<div className="absolute inset-0 animate-pulse rounded-full bg-green-500/20 blur-xl" />
-							<div className="relative rounded-full border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-6">
-								<CheckCircle
-									className="size-12 text-green-600"
-									weight="duotone"
-								/>
-							</div>
-							<Sparkle
-								className="absolute -top-2 -right-2 size-6 animate-pulse text-green-500/60"
-								weight="duotone"
-							/>
-						</div>
-
-						<div className="mb-8 space-y-4">
-							<h3 className="bg-linear-to-r from-green-600 to-green-500 bg-clip-text font-bold text-2xl text-transparent">
-								Welcome Aboard!
-							</h3>
-							<p className="text-lg text-muted-foreground leading-relaxed">
-								You've successfully joined{" "}
-								<span className="font-semibold text-foreground">
-									{invitation?.organizationName}
-								</span>
-							</p>
-							<p className="text-muted-foreground text-sm">
-								Redirecting you to your dashboard...
-							</p>
-						</div>
-
-						<div className="max-w-md rounded-xl border border-green-200 bg-green-50 p-6 dark:border-green-800 dark:bg-green-900/20">
-							<div className="flex items-start gap-3">
-								<div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/40">
-									<Sparkle
-										className="size-5 text-green-600 dark:text-green-400"
-										weight="duotone"
-									/>
-								</div>
-								<div className="text-left">
-									<p className="mb-2 font-semibold text-green-800 text-sm dark:text-green-200">
-										🎉 You're all set!
-									</p>
-									<p className="text-green-700 text-sm leading-relaxed dark:text-green-300">
-										You can now access all projects and resources in{" "}
-										{invitation?.organizationName}.
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-				);
-
-			case "already-accepted":
-				return (
-					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-						<div className="relative mb-8">
-							<div className="rounded-full border border-blue-500/20 bg-blue-500/10 p-8">
-								<CheckCircle
-									className="size-16 text-foreground"
-									weight="duotone"
-								/>
-							</div>
-						</div>
-
-						<div className="mb-8 space-y-4">
-							<h3 className="font-bold text-2xl">Already a Member</h3>
-							<p className="text-lg text-muted-foreground leading-relaxed">
-								You're already a member of{" "}
-								<span className="font-semibold text-foreground">
-									{invitation?.organizationName}
-								</span>
-							</p>
-						</div>
-
-						<Button
-							className="gap-3 rounded px-8 py-6 font-medium text-lg"
-							onClick={() => router.push("/websites")}
-							size="lg"
-						>
-							<Buildings className="size-5" weight="duotone" />
-							Go to Dashboard
-							<ArrowRight className="size-5" weight="duotone" />
-						</Button>
-					</div>
-				);
-
-			case "expired":
-				return (
-					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-						<div className="relative mb-8">
-							<div className="rounded-full border border-red-500/20 bg-red-500/10 p-8">
-								<XCircle className="size-16 text-red-600" weight="duotone" />
-							</div>
-						</div>
-
-						<div className="mb-8 space-y-4">
-							<h3 className="font-bold text-2xl">Invitation Expired</h3>
-							<p className="text-lg text-muted-foreground leading-relaxed">
-								This invitation link has expired or is no longer valid.
-							</p>
-							<p className="text-muted-foreground text-sm">
-								Please contact the organization admin for a new invitation.
-							</p>
-						</div>
-
-						<Button
-							className="gap-3 rounded px-8 py-6 font-medium text-lg"
-							onClick={() => router.push("/")}
-							size="lg"
-						>
-							<Buildings className="size-5" weight="duotone" />
-							Back to Home
-							<ArrowRight className="size-5" weight="duotone" />
-						</Button>
-					</div>
-				);
-
-			case "error":
-				return (
-					<div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-						<div className="relative mb-8">
-							<div className="rounded-full border border-red-500/20 bg-red-500/10 p-8">
-								<XCircle className="size-16 text-red-600" weight="duotone" />
-							</div>
-						</div>
-
-						<div className="mb-8 space-y-4">
-							<h3 className="font-bold text-2xl">Something went wrong</h3>
-							<p className="text-lg text-muted-foreground leading-relaxed">
-								{error}
-							</p>
-						</div>
-
-						<Button
-							className="gap-3 rounded px-8 py-6 font-medium text-lg"
-							onClick={() => router.push("/")}
-							size="lg"
-						>
-							<Buildings className="size-5" weight="duotone" />
-							Back to Home
-							<ArrowRight className="size-5" weight="duotone" />
-						</Button>
-					</div>
-				);
-
-			default:
-				return null;
+		if (result.data) {
+			setActionStatus("success");
+			queryClient.invalidateQueries({
+				queryKey: orpc.organizations.getUserPendingInvitations.key(),
+			});
+		} else {
+			setActionStatus("idle");
 		}
+	}, [invitation, invitationId, queryClient]);
+
+	const handleDecline = useCallback(() => {
+		router.push("/websites");
+	}, [router]);
+
+	if (isLoading) {
+		return (
+			<div className="flex h-full flex-col">
+				<PageHeader
+					description="Loading invitation…"
+					icon={<UserPlusIcon />}
+					title="Invitation"
+				/>
+				<ContentSkeleton />
+			</div>
+		);
+	}
+
+	if (error) {
+		const isExpired =
+			error.message?.includes("expired") ||
+			error.message?.includes("not found");
+		return (
+			<div className="flex h-full flex-col">
+				<PageHeader
+					description="Unable to process invitation"
+					icon={<UserPlusIcon />}
+					title="Invitation"
+				/>
+				{isExpired ? <ExpiredState /> : <ErrorState message={error.message} />}
+			</div>
+		);
+	}
+
+	if (!invitation) {
+		return (
+			<div className="flex h-full flex-col">
+				<PageHeader
+					description="Invitation not found"
+					icon={<UserPlusIcon />}
+					title="Invitation"
+				/>
+				<ErrorState message="Invitation not found" />
+			</div>
+		);
+	}
+
+	const isExpired =
+		invitation.status === "canceled" ||
+		invitation.status === "rejected" ||
+		new Date(invitation.expiresAt) < new Date();
+
+	const isAlreadyAccepted = invitation.status === "accepted";
+
+	const getDescription = () => {
+		if (actionStatus === "success") {
+			return "Successfully joined";
+		}
+		if (isAlreadyAccepted) {
+			return "Already a member";
+		}
+		if (isExpired) {
+			return "Invitation expired";
+		}
+		return `Join ${invitation.organizationName}`;
 	};
 
 	return (
-		<div className="fade-in slide-in-from-bottom-4 flex h-full animate-in flex-col duration-500">
-			<div className="border-b bg-muted/30">
-				<div className="flex flex-col justify-between gap-3 p-3 sm:flex-row sm:items-center sm:gap-0 sm:px-4 sm:py-4">
-					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-3">
-							<div className="rounded-lg border border-accent bg-accent/50 p-2">
-								<UserPlus className="size-5 text-primary" weight="duotone" />
-							</div>
-							<div>
-								<h1 className="truncate font-bold text-foreground text-xl tracking-tight sm:text-2xl">
-									Organization Invitation
-								</h1>
-								<p className="mt-0.5 text-muted-foreground text-xs sm:text-sm">
-									{status === "ready" && invitation
-										? `Join ${invitation.organizationName}`
-										: "Processing invitation"}
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+		<div className="flex h-full flex-col">
+			<PageHeader
+				description={getDescription()}
+				icon={<UserPlusIcon />}
+				title="Invitation"
+			/>
 
-			<div className="flex-1 overflow-y-auto">
-				<Card className="w-full border-0 bg-transparent shadow-none">
-					<CardContent className="p-0">{renderContent()}</CardContent>
-				</Card>
-			</div>
+			{actionStatus === "success" ? (
+				<SuccessState organizationName={invitation.organizationName} />
+			) : isAlreadyAccepted ? (
+				<AlreadyMemberState organizationName={invitation.organizationName} />
+			) : isExpired ? (
+				<ExpiredState />
+			) : (
+				<InvitationDetails
+					actionStatus={actionStatus}
+					invitation={invitation}
+					onAcceptAction={handleAccept}
+					onDeclineAction={handleDecline}
+				/>
+			)}
 		</div>
 	);
 }

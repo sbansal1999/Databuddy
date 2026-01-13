@@ -35,10 +35,44 @@ const defaultQueryClientOptions = {
 	},
 };
 
+function isAuthError(error: unknown): boolean {
+	if (!error || typeof error !== "object") {
+		return false;
+	}
+
+	const rpcError = error as {
+		data?: { code?: string; message?: string };
+		code?: string;
+		message?: string;
+	};
+
+	const errorCode = rpcError.data?.code ?? rpcError.code;
+	if (errorCode === "UNAUTHORIZED" || errorCode === "AUTH_REQUIRED") {
+		return true;
+	}
+
+	const errorMessage = (
+		rpcError.data?.message ??
+		rpcError.message ??
+		String(error)
+	).toLowerCase();
+
+	return (
+		errorMessage.includes("authentication") ||
+		errorMessage.includes("unauthorized") ||
+		errorMessage.includes("unauthenticated") ||
+		errorMessage.includes("401")
+	);
+}
+
 const queryClient = new QueryClient({
 	defaultOptions: defaultQueryClientOptions.defaultOptions,
 	queryCache: new QueryCache({
 		onError: (error) => {
+			if (isAuthError(error)) {
+				return;
+			}
+
 			const message = error instanceof Error ? error.message : "Unknown error";
 			toast.error(message);
 			trackError(message, {
@@ -50,6 +84,10 @@ const queryClient = new QueryClient({
 	}),
 	mutationCache: new MutationCache({
 		onError: (error) => {
+			if (isAuthError(error)) {
+				return;
+			}
+
 			const message = error instanceof Error ? error.message : "Unknown error";
 			toast.error(message);
 			trackError(message, {

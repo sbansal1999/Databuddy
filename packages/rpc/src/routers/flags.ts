@@ -119,6 +119,7 @@ const updateFlagSchema = z
 		rules: z.array(userRuleSchema).optional(),
 		persistAcrossAuth: z.boolean().optional(),
 		rolloutPercentage: z.number().min(0).max(100).optional(),
+		rolloutBy: z.string().optional(),
 		variants: z.array(variantSchema).optional(),
 		dependencies: z.array(z.string()).optional(),
 		environment: z.string().optional(),
@@ -533,6 +534,7 @@ export const flagsRouter = {
 							existingFlag[0].persistAcrossAuth ??
 							false,
 						rolloutPercentage: input.rolloutPercentage,
+						rolloutBy: input.rolloutBy,
 						variants: input.variants,
 						dependencies: input.dependencies,
 						environment: input.environment,
@@ -579,6 +581,7 @@ export const flagsRouter = {
 					rules: input.rules || [],
 					persistAcrossAuth: input.persistAcrossAuth ?? false,
 					rolloutPercentage: input.rolloutPercentage || 0,
+					rolloutBy: input.rolloutBy || null,
 					variants: input.variants || [],
 					dependencies: input.dependencies || [],
 					websiteId: input.websiteId || null,

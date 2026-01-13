@@ -7,6 +7,9 @@ const extensionSchemes = [
 	"moz-extension://",
 	"safari-extension://",
 	"edge-extension://",
+	"brave-extension://",
+	"opera-extension://",
+	"vivaldi-extension://",
 ] as const;
 
 const isExtensionSource = (candidate?: string | null) => {
@@ -17,9 +20,6 @@ const isExtensionSource = (candidate?: string | null) => {
 	const normalized = candidate.toLowerCase();
 	return extensionSchemes.some((scheme) => normalized.includes(scheme));
 };
-
-const isScriptErrorMessage = (message?: string) =>
-	message?.trim().toLowerCase() === "script error.";
 
 export function initErrorTracking(tracker: BaseTracker) {
 	if (tracker.isServer()) {
@@ -46,14 +46,14 @@ export function initErrorTracking(tracker: BaseTracker) {
 	};
 
 	const errorHandler = (event: ErrorEvent) => {
-		if (isScriptErrorMessage(event.message)) {
-			return;
-		}
-
 		if (
 			isExtensionSource(event.filename) ||
 			isExtensionSource(event.error?.stack)
 		) {
+			return;
+		}
+
+		if (event.error === null && event.message === "Script error.") {
 			return;
 		}
 
@@ -85,16 +85,20 @@ export function initErrorTracking(tracker: BaseTracker) {
 
 		let message = String(reason);
 		if (typeof reason === "object" && reason !== null) {
-			try {
-				message = JSON.stringify(reason);
-			} catch {}
+			if ("message" in reason && typeof (reason as any).message === "string") {
+				message = (reason as any).message;
+			} else {
+				try {
+					message = JSON.stringify(reason);
+				} catch { }
+			}
 		}
 
-		if (isExtensionSource(reason?.stack)) {
+		if (isExtensionSource(message) || isExtensionSource(reason?.stack)) {
 			return;
 		}
 
-		trackError({
+		trackError({	
 			message,
 			stack: reason?.stack,
 			errorType: "UnhandledRejection",

@@ -9,18 +9,20 @@
     "./config": "./config.ts"
   },
   "scripts": {
+    "dev": "email dev --dir src/emails --port 3001",
     "preview": "email dev --dir src/emails --port 3001"
   },
   "main": "./src/emails/index.ts",
   "dependencies": {
     "@react-email/components": "0.3.2",
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.10.4",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@react-email/preview-server": "5.2.1",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "react-email": "^4.0.17"
+    "react-email": "^5.2.1"
   }
 }

@@ -92,6 +92,8 @@ export const VitalsBuilders: Record<string, SimpleQueryConfig> = {
 						quantile(0.50)(metric_value) as p50,
 						quantile(0.75)(metric_value) as p75,
 						quantile(0.90)(metric_value) as p90,
+						quantile(0.95)(metric_value) as p95,
+						quantile(0.99)(metric_value) as p99,
 						count() as samples
 					FROM ${Analytics.web_vitals_spans}
 					WHERE 

@@ -43,6 +43,7 @@ export type ChartStepType =
 	| "step"
 	| "stepBefore"
 	| "stepAfter";
+export type StatCardDisplayMode = "compact" | "chart" | "text";
 
 interface StatCardProps {
 	title: string;
@@ -63,6 +64,7 @@ interface StatCardProps {
 	chartStepType?: ChartStepType;
 	formatValue?: (value: number) => string;
 	formatChartValue?: (value: number) => string;
+	displayMode?: StatCardDisplayMode;
 }
 
 const formatTrendValue = (
@@ -445,10 +447,15 @@ export function StatCard({
 	chartStepType = "monotone",
 	formatValue,
 	formatChartValue,
+	displayMode,
 }: StatCardProps) {
 	const trendValue =
 		typeof trend === "object" && trend !== null ? trend.change : trend;
-	const hasValidChartData = showChart && chartData && chartData.length > 0;
+
+	const resolvedDisplayMode: StatCardDisplayMode =
+		displayMode ?? (showChart ? "chart" : "compact");
+	const hasValidChartData =
+		resolvedDisplayMode === "chart" && chartData && chartData.length > 0;
 
 	if (isLoading) {
 		return (
@@ -456,7 +463,7 @@ export function StatCard({
 				className={cn("gap-0 overflow-hidden border bg-card py-0", className)}
 				id={id}
 			>
-				{showChart && (
+				{resolvedDisplayMode !== "compact" && (
 					<div className="dotted-bg bg-accent pt-0">
 						<Skeleton className="h-26 w-full" />
 					</div>
@@ -500,23 +507,47 @@ export function StatCard({
 					/>
 				</div>
 			)}
+			{resolvedDisplayMode === "text" && (
+				<div className="dotted-bg flex h-26 items-center justify-center bg-accent">
+					<span className="font-bold text-4xl text-foreground tabular-nums">
+						{displayValue}
+					</span>
+				</div>
+			)}
 			<div className="flex items-center gap-2.5 px-2.5 py-2.5">
 				{Icon && (
 					<div className="flex size-7 shrink-0 items-center justify-center rounded bg-accent">
-						<Icon className="size-4 text-muted-foreground" />
+						<Icon className="size-4 text-muted-foreground" weight="duotone" />
 					</div>
 				)}
 				<div className="min-w-0 flex-1">
-					<p className="truncate font-semibold text-base tabular-nums leading-tight">
-						{displayValue}
-					</p>
-					<p className="truncate text-muted-foreground text-xs">{title}</p>
+					{resolvedDisplayMode === "text" ? (
+						<>
+							<p className="truncate font-medium text-foreground text-sm">
+								{title}
+							</p>
+							{description && (
+								<p className="truncate text-muted-foreground text-xs">
+									{description}
+								</p>
+							)}
+						</>
+					) : (
+						<>
+							<p className="truncate font-semibold text-base tabular-nums leading-tight">
+								{displayValue}
+							</p>
+							<p className="truncate text-muted-foreground text-xs">{title}</p>
+						</>
+					)}
 				</div>
 				{titleExtra}
 				<div className="shrink-0 text-right">
-					{trendValue !== undefined && !Number.isNaN(trendValue) ? (
+					{resolvedDisplayMode !== "text" &&
+					trendValue !== undefined &&
+					!Number.isNaN(trendValue) ? (
 						<TrendIndicator invertColor={invertTrend} value={trendValue} />
-					) : description ? (
+					) : resolvedDisplayMode !== "text" && description ? (
 						<span className="text-muted-foreground text-xs">{description}</span>
 					) : null}
 				</div>

@@ -36,11 +36,13 @@ interface EventsTrendChartProps {
 		events: number;
 		users: number;
 	}>;
+	isFetching?: boolean;
 	isLoading?: boolean;
 }
 
 export function EventsTrendChart({
 	chartData,
+	isFetching,
 	isLoading,
 }: EventsTrendChartProps) {
 	const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
@@ -178,6 +180,12 @@ export function EventsTrendChart({
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					{isFetching && !isLoading && (
+						<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+							<ArrowCounterClockwiseIcon className="size-3 animate-spin" />
+							<span>Updating…</span>
+						</div>
+					)}
 					{isZoomed && (
 						<Button
 							className="h-7 gap-1 px-2 text-xs"

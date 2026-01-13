@@ -9,6 +9,8 @@ const flagQuerySchema = t.Object({
 	clientId: t.String(),
 	userId: t.Optional(t.String()),
 	email: t.Optional(t.String()),
+	organizationId: t.Optional(t.String()),
+	teamId: t.Optional(t.String()),
 	properties: t.Optional(t.String()),
 	environment: t.Optional(t.String()),
 });
@@ -17,6 +19,8 @@ const bulkFlagQuerySchema = t.Object({
 	clientId: t.String(),
 	userId: t.Optional(t.String()),
 	email: t.Optional(t.String()),
+	organizationId: t.Optional(t.String()),
+	teamId: t.Optional(t.String()),
 	properties: t.Optional(t.String()),
 	environment: t.Optional(t.String()),
 });
@@ -24,6 +28,8 @@ const bulkFlagQuerySchema = t.Object({
 interface UserContext {
 	userId?: string;
 	email?: string;
+	organizationId?: string;
+	teamId?: string;
 	properties?: Record<string, unknown>;
 }
 
@@ -66,6 +72,7 @@ interface EvaluableFlag {
 	status: "active" | "inactive" | "archived";
 	defaultValue: string | number | boolean | unknown;
 	rolloutPercentage: number | null;
+	rolloutBy?: string | null;
 	rules?: FlagRule[] | unknown;
 	variants?: Variant[];
 	payload?: unknown;
@@ -400,7 +407,20 @@ export function evaluateFlag(
 	let reason = "DEFAULT_VALUE";
 
 	if (flag.type === "rollout") {
-		const identifier = context.userId || context.email || "anonymous";
+		let identifier: string;
+
+		switch (flag.rolloutBy) {
+			case "organization":
+				identifier = context.organizationId || "anonymous";
+				break;
+			case "team":
+				identifier = context.teamId || "anonymous";
+				break;
+			default:
+				// Default: user-based rollout
+				identifier = context.userId || context.email || "anonymous";
+		}
+
 		const hash = hashString(`${flag.key}:${identifier}`);
 		const percentage = hash % 100;
 		const rolloutPercentage = flag.rolloutPercentage || 0;
@@ -428,16 +448,16 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 		function evaluateFlagEndpoint({ query, set }) {
 			return record("evaluateFlag", async (): Promise<FlagResult> => {
 				setAttributes({
-					"flag.key": query.key || "missing",
-					"flag.client_id": query.clientId || "missing",
-					"flag.has_user_id": Boolean(query.userId),
-					"flag.has_email": Boolean(query.email),
-					"flag.environment": query.environment || "missing",
+					flag_key: query.key || "missing",
+					flag_client_id: query.clientId || "missing",
+					flag_has_user_id: Boolean(query.userId),
+					flag_has_email: Boolean(query.email),
+					flag_environment: query.environment || "missing",
 				});
 
 				try {
 					if (!(query.key && query.clientId)) {
-						setAttributes({ "flag.error": "missing_params" });
+						setAttributes({ flag_error: "missing_params" });
 						set.status = 400;
 						return {
 							enabled: false,
@@ -450,6 +470,8 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 					const context: UserContext = {
 						userId: query.userId,
 						email: query.email,
+						organizationId: query.organizationId,
+						teamId: query.teamId,
 						properties: parseProperties(query.properties),
 					};
 
@@ -471,7 +493,7 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 					);
 
 					if (!flag) {
-						setAttributes({ "flag.found": false });
+						setAttributes({ flag_found: false });
 						return {
 							enabled: false,
 							value: false,
@@ -487,6 +509,7 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 							type: flag.type,
 							status: flag.status,
 							rolloutPercentage: flag.rolloutPercentage,
+							rolloutBy: flag.rolloutBy,
 							rules: flag.rules,
 							variants: flag.variants as Variant[],
 							payload: flag.payload,
@@ -496,15 +519,15 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 						context
 					);
 					setAttributes({
-						"flag.found": true,
-						"flag.type": flag.type,
-						"flag.enabled": result.enabled,
-						"flag.reason": result.reason,
+						flag_found: true,
+						flag_type: flag.type,
+						flag_enabled: result.enabled,
+						flag_reason: result.reason,
 					});
 
 					return result;
 				} catch (error) {
-					setAttributes({ "flag.error": true });
+					setAttributes({ flag_error: true });
 					logger.error(
 						{ error, key: query.key, clientId: query.clientId },
 						"Flag evaluation failed"
@@ -527,16 +550,16 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 		function bulkEvaluateFlags({ query, set }) {
 			return record("bulkEvaluateFlags", async () => {
 				setAttributes({
-					"flag.bulk": true,
-					"flag.client_id": query.clientId || "missing",
-					"flag.has_user_id": Boolean(query.userId),
-					"flag.has_email": Boolean(query.email),
-					"flag.environment": query.environment || "missing",
+					flag_bulk: true,
+					flag_client_id: query.clientId || "missing",
+					flag_has_user_id: Boolean(query.userId),
+					flag_has_email: Boolean(query.email),
+					flag_environment: query.environment || "missing",
 				});
 
 				try {
 					if (!query.clientId) {
-						setAttributes({ "flag.error": "missing_client_id" });
+						setAttributes({ flag_error: "missing_client_id" });
 						set.status = 400;
 						return {
 							flags: {},
@@ -548,6 +571,8 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 					const context: UserContext = {
 						userId: query.userId,
 						email: query.email,
+						organizationId: query.organizationId,
+						teamId: query.teamId,
 						properties: parseProperties(query.properties),
 					};
 
@@ -557,7 +582,7 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 					);
 
 					setAttributes({
-						"flag.total_flags": allFlags.length,
+						flag_total_flags: allFlags.length,
 					});
 
 					const enabledFlags: Record<string, FlagResult> = {};
@@ -573,7 +598,7 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 					}
 
 					setAttributes({
-						"flag.enabled_count": Object.keys(enabledFlags).length,
+						flag_enabled_count: Object.keys(enabledFlags).length,
 					});
 
 					return {
@@ -582,7 +607,7 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 						timestamp: new Date().toISOString(),
 					};
 				} catch (error) {
-					setAttributes({ "flag.error": true });
+					setAttributes({ flag_error: true });
 					logger.error(
 						{ error, clientId: query.clientId },
 						"Bulk flag evaluation failed"
@@ -597,6 +622,71 @@ export const flagsRoute = new Elysia({ prefix: "/v1/flags" })
 			});
 		},
 		{ query: bulkFlagQuerySchema }
+	)
+
+	.get(
+		"/definitions",
+		function getDefinitionsEndpoint({ query, set }) {
+			return record("getFlagDefinitions", async () => {
+				setAttributes({
+					flag_client_id: query.clientId || "missing",
+					flag_environment: query.environment || "missing",
+				});
+
+				try {
+					if (!query.clientId) {
+						setAttributes({ flag_error: "missing_client_id" });
+						set.status = 400;
+						return {
+							flags: [],
+							error: "Missing required clientId parameter",
+						};
+					}
+
+					const allFlags = await getCachedFlagsForClient(
+						query.clientId,
+						query.environment
+					);
+
+					setAttributes({
+						flag_total_flags: allFlags.length,
+					});
+
+					// Return flag definitions without evaluation
+					const flagDefinitions = allFlags.map((flag) => ({
+						key: flag.key,
+						description: flag.description,
+						type: flag.type,
+						variants: flag.variants,
+						createdAt: flag.createdAt,
+						updatedAt: flag.updatedAt,
+					}));
+
+					return {
+						flags: flagDefinitions,
+						count: flagDefinitions.length,
+						timestamp: new Date().toISOString(),
+					};
+				} catch (error) {
+					setAttributes({ flag_error: true });
+					logger.error(
+						{ error, clientId: query.clientId },
+						"Flag definitions fetch failed"
+					);
+					set.status = 500;
+					return {
+						flags: [],
+						error: "Failed to fetch flag definitions",
+					};
+				}
+			});
+		},
+		{
+			query: t.Object({
+				clientId: t.String(),
+				environment: t.Optional(t.String()),
+			}),
+		}
 	)
 
 	.get("/health", () => ({

@@ -1,15 +1,11 @@
 "use client";
 
-import {
-	CheckCircleIcon,
-	HeartbeatIcon,
-	WarningCircleIcon,
-	WarningIcon,
-} from "@phosphor-icons/react";
+import { HeartbeatIcon } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import { RESGaugeCard } from "@/components/analytics/res-gauge-card";
 import {
 	type TrendData,
 	VITAL_CONFIGS,
@@ -17,12 +13,9 @@ import {
 } from "@/components/analytics/vital-gauge-card";
 import { SimpleMetricsChart } from "@/components/charts/simple-metrics-chart";
 import { DataTable, type TabConfig } from "@/components/table/data-table";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFilters } from "@/hooks/use-date-filters";
 import { useBatchDynamicQuery } from "@/hooks/use-dynamic-query";
 import { usePersistentState } from "@/hooks/use-persistent-state";
-import { cn } from "@/lib/utils";
 import {
 	addDynamicFilterAtom,
 	dynamicQueryFiltersAtom,
@@ -64,11 +57,13 @@ interface VitalByPageRow {
 	p50: number;
 	p75: number;
 	p90: number;
+	p95: number;
+	p99: number;
 	samples: number;
 }
 
 type VitalVisibility = Record<string, boolean>;
-type PercentileKey = "p50" | "p75" | "p90";
+type PercentileKey = "p50" | "p75" | "p90" | "p95" | "p99";
 
 const DEFAULT_VISIBILITY: VitalVisibility = {
 	LCP: true,
@@ -84,16 +79,12 @@ const PERCENTILE_OPTIONS: {
 	label: string;
 	description: string;
 }[] = [
-	{ value: "p50", label: "p50", description: "Median (50th percentile)" },
-	{
-		value: "p75",
-		label: "p75",
-		description: "Google's threshold (75th percentile)",
-	},
+	{ value: "p50", label: "p50", description: "Median" },
+	{ value: "p75", label: "p75", description: "Google's threshold" },
 	{ value: "p90", label: "p90", description: "90th percentile" },
+	{ value: "p95", label: "p95", description: "95th percentile" },
+	{ value: "p99", label: "p99", description: "99th percentile" },
 ];
-
-const CORE_WEB_VITALS = ["LCP", "CLS", "INP"] as const;
 
 function calculatePreviousPeriod(dateRange: {
 	start_date: string;
@@ -241,90 +232,6 @@ export default function VitalsPage() {
 			unknown
 		>[]) ?? [];
 
-	// Calculate Core Web Vitals pass rate
-	const cwvSummary = useMemo(() => {
-		if (overviewData.length === 0) {
-			return {
-				passRate: 0,
-				good: 0,
-				needsWork: 0,
-				poor: 0,
-				totalSamples: 0,
-				metrics: [],
-			};
-		}
-
-		let passCount = 0;
-		let needsWorkCount = 0;
-		let poorCount = 0;
-		let totalSamples = 0;
-		const metrics: Array<{
-			name: string;
-			status: "good" | "needs-work" | "poor";
-			value: number;
-		}> = [];
-
-		for (const metric of overviewData) {
-			const config = VITAL_CONFIGS[metric.metric_name];
-			if (
-				!(
-					config &&
-					CORE_WEB_VITALS.includes(
-						metric.metric_name as (typeof CORE_WEB_VITALS)[number]
-					)
-				)
-			) {
-				continue;
-			}
-
-			// Use p75 for CWV assessment (Google's standard)
-			const value = metric.p75;
-			totalSamples += metric.samples;
-
-			let status: "good" | "needs-work" | "poor" = "good";
-
-			if (config.lowerIsBetter !== false) {
-				if (value <= config.goodThreshold) {
-					passCount++;
-					status = "good";
-				} else if (value <= config.poorThreshold) {
-					needsWorkCount++;
-					status = "needs-work";
-				} else {
-					poorCount++;
-					status = "poor";
-				}
-			} else if (value >= config.goodThreshold) {
-				passCount++;
-				status = "good";
-			} else if (value >= config.poorThreshold) {
-				needsWorkCount++;
-				status = "needs-work";
-			} else {
-				poorCount++;
-				status = "poor";
-			}
-
-			metrics.push({
-				name: metric.metric_name,
-				status,
-				value,
-			});
-		}
-
-		const totalMetrics = passCount + needsWorkCount + poorCount;
-		const passRate = totalMetrics > 0 ? (passCount / totalMetrics) * 100 : 0;
-
-		return {
-			passRate,
-			good: passCount,
-			needsWork: needsWorkCount,
-			poor: poorCount,
-			totalSamples,
-			metrics,
-		};
-	}, [overviewData]);
-
 	// Pivot time series data from EAV to columnar format for the chart
 	const chartData = useMemo(() => {
 		if (!timeSeriesData.length) {
@@ -424,6 +331,13 @@ export default function VitalsPage() {
 			addFilter({ field, operator: "eq", value });
 		},
 		[addFilter]
+	);
+
+	const handlePercentileChange = useCallback(
+		(value: string) => {
+			setSelectedPercentile(value as PercentileKey);
+		},
+		[setSelectedPercentile]
 	);
 
 	const pageVitalsTable = useMemo(() => {
@@ -597,116 +511,15 @@ export default function VitalsPage() {
 	return (
 		<div className="relative flex h-full flex-col">
 			<div className="space-y-4 p-4">
-				{isLoading ? (
-					<Card className="gap-0 py-0">
-						<CardContent className="flex items-center gap-4 p-4">
-							<Skeleton className="size-14 rounded-full" />
-							<div className="flex-1 space-y-2">
-								<Skeleton className="h-5 w-32" />
-								<Skeleton className="h-4 w-48" />
-							</div>
-							<Skeleton className="h-8 w-40" />
-						</CardContent>
-					</Card>
-				) : overviewData.length > 0 ? (
-					<Card
-						className={cn(
-							"gap-0 border-l-4 py-0",
-							cwvSummary.passRate >= 90 && "border-l-success",
-							cwvSummary.passRate >= 50 &&
-								cwvSummary.passRate < 90 &&
-								"border-l-warning",
-							cwvSummary.passRate < 50 && "border-l-destructive"
-						)}
-					>
-						<CardContent className="flex items-center gap-4 p-4">
-							<div
-								className={cn(
-									"flex size-14 shrink-0 items-center justify-center rounded-full",
-									cwvSummary.passRate >= 90 && "bg-success/10",
-									cwvSummary.passRate >= 50 &&
-										cwvSummary.passRate < 90 &&
-										"bg-warning/10",
-									cwvSummary.passRate < 50 && "bg-destructive/10"
-								)}
-							>
-								{cwvSummary.passRate >= 90 ? (
-									<CheckCircleIcon
-										className="size-7 text-success"
-										weight="duotone"
-									/>
-								) : cwvSummary.passRate >= 50 ? (
-									<WarningCircleIcon
-										className="size-7 text-warning"
-										weight="duotone"
-									/>
-								) : (
-									<WarningIcon
-										className="size-7 text-destructive"
-										weight="duotone"
-									/>
-								)}
-							</div>
-							<div className="flex-1">
-								<div className="flex items-baseline gap-2">
-									<span className="font-bold text-2xl tabular-nums">
-										{cwvSummary.good}/{CORE_WEB_VITALS.length}
-									</span>
-									<span className="text-muted-foreground text-sm">
-										Core Web Vitals passing
-									</span>
-								</div>
-								<p className="text-muted-foreground text-xs">
-									{cwvSummary.metrics.map((metric, idx) => (
-										<span key={metric.name}>
-											{idx > 0 && " · "}
-											<span className="font-medium text-foreground">
-												{metric.name}
-											</span>{" "}
-											<span
-												className={cn(
-													metric.status === "good" && "text-success",
-													metric.status === "needs-work" && "text-warning",
-													metric.status === "poor" && "text-destructive"
-												)}
-											>
-												{metric.status === "good"
-													? "✓"
-													: metric.status === "needs-work"
-														? "⚠"
-														: "✗"}
-											</span>
-										</span>
-									))}
-									{cwvSummary.totalSamples > 0 && (
-										<> · {cwvSummary.totalSamples.toLocaleString()} samples</>
-									)}
-								</p>
-							</div>
-							<div className="flex shrink-0 flex-col gap-1.5">
-								<span className="text-muted-foreground text-xs">
-									Percentile
-								</span>
-								<div className="flex rounded border bg-muted/30 p-0.5">
-									{PERCENTILE_OPTIONS.map((opt) => (
-										<button
-											className={cn(
-												"rounded px-2.5 py-1 font-medium text-xs transition-colors",
-												selectedPercentile === opt.value
-													? "bg-background text-foreground shadow-sm"
-													: "text-muted-foreground hover:text-foreground"
-											)}
-											key={opt.value}
-											onClick={() => setSelectedPercentile(opt.value)}
-											type="button"
-										>
-											{opt.label}
-										</button>
-									))}
-								</div>
-							</div>
-						</CardContent>
-					</Card>
+				{overviewData.length > 0 || isLoading ? (
+					<RESGaugeCard
+						isLoading={isLoading}
+						metrics={overviewData}
+						onPercentileChangeAction={handlePercentileChange}
+						percentileOptions={PERCENTILE_OPTIONS}
+						previousMetrics={previousOverviewData}
+						selectedPercentile={selectedPercentile}
+					/>
 				) : null}
 
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

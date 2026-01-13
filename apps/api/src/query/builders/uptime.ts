@@ -24,10 +24,6 @@ export const UptimeBuilders: Record<string, SimpleQueryConfig> = {
 		customSql: (websiteId: string, startDate: string, endDate: string) => ({
 			sql: `
 				SELECT 
-					COUNT(*) as total_checks,
-					countIf(status = 1) as successful_checks,
-					countIf(status = 0) as failed_checks,
-					countIf(status = 2) as pending_checks,
 					if((countIf(status = 1) + countIf(status = 0)) = 0, 0, round((countIf(status = 1) / (countIf(status = 1) + countIf(status = 0))) * 100, 2)) as uptime_percentage,
 					avg(total_ms) as avg_response_time,
 					quantile(0.50)(total_ms) as p50_response_time,
@@ -73,10 +69,6 @@ export const UptimeBuilders: Record<string, SimpleQueryConfig> = {
 				sql: `
 					SELECT 
 						${timeGroup} as date,
-						COUNT(*) as total_checks,
-						countIf(status = 1) as successful_checks,
-						countIf(status = 0) as failed_checks,
-						countIf(status = 2) as pending_checks,
 						if((countIf(status = 1) + countIf(status = 0)) = 0, 0, round((countIf(status = 1) / (countIf(status = 1) + countIf(status = 0))) * 100, 2)) as uptime_percentage,
 						avg(total_ms) as avg_response_time,
 						quantile(0.50)(total_ms) as p50_response_time,
@@ -213,7 +205,6 @@ export const UptimeBuilders: Record<string, SimpleQueryConfig> = {
 				SELECT 
 					argMax(ssl_expiry, timestamp) as ssl_expiry,
 					argMax(ssl_valid, timestamp) as ssl_valid,
-					COUNT(*) as total_checks,
 					sum(CASE WHEN ssl_valid = 0 THEN 1 ELSE 0 END) as invalid_ssl_checks
 				FROM ${UPTIME_TABLE}
 				WHERE 
@@ -233,10 +224,6 @@ export const UptimeBuilders: Record<string, SimpleQueryConfig> = {
 			sql: `
 				SELECT 
 					probe_region as region,
-					COUNT(*) as total_checks,
-					countIf(status = 1) as successful_checks,
-					countIf(status = 0) as failed_checks,
-					countIf(status = 2) as pending_checks,
 					if((countIf(status = 1) + countIf(status = 0)) = 0, 0, round((countIf(status = 1) / (countIf(status = 1) + countIf(status = 0))) * 100, 2)) as uptime_percentage,
 					avg(total_ms) as avg_response_time,
 					quantile(0.95)(total_ms) as p95_response_time
@@ -246,7 +233,7 @@ export const UptimeBuilders: Record<string, SimpleQueryConfig> = {
 					AND timestamp >= toDateTime({startDate:String})
 					AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 				GROUP BY probe_region
-				ORDER BY total_checks DESC
+				ORDER BY uptime_percentage DESC
 			`,
 			params: { websiteId, startDate, endDate },
 		}),

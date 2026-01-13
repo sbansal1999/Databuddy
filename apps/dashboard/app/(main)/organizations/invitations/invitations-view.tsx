@@ -14,7 +14,13 @@ import { InviteMemberDialog } from "@/components/organizations/invite-member-dia
 import { RightSidebar } from "@/components/right-sidebar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Tabs,
+	TabsBadge,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/components/ui/tabs";
 import { useOrganizationInvitations } from "@/hooks/use-organization-invitations";
 import type {
 	ActiveOrganization,
@@ -37,23 +43,23 @@ function SkeletonRow() {
 
 function InvitationsSkeleton() {
 	return (
-		<div className="h-full lg:grid lg:grid-cols-[1fr_18rem]">
-			<div className="border-b lg:border-b-0">
-				<div className="flex gap-4 border-b px-5 py-3">
-					<Skeleton className="h-8 w-24" />
-					<Skeleton className="h-8 w-24" />
-					<Skeleton className="h-8 w-24" />
-				</div>
-				<div className="divide-y">
-					<SkeletonRow />
-					<SkeletonRow />
-					<SkeletonRow />
-				</div>
+		<div className="flex h-full flex-col">
+			<div className="flex h-10 shrink-0 gap-4 border-b bg-accent/30 px-3">
+				<Skeleton className="my-2 h-6 w-24" />
+				<Skeleton className="my-2 h-6 w-24" />
+				<Skeleton className="my-2 h-6 w-24" />
 			</div>
-			<div className="space-y-4 bg-card p-5">
-				<Skeleton className="h-10 w-full" />
-				<Skeleton className="h-18 w-full rounded" />
-				<Skeleton className="h-10 w-full" />
+			<div className="flex-1 lg:grid lg:grid-cols-[1fr_18rem]">
+				<div className="divide-y border-b lg:border-b-0">
+					<SkeletonRow />
+					<SkeletonRow />
+					<SkeletonRow />
+				</div>
+				<div className="space-y-4 bg-card p-5">
+					<Skeleton className="h-10 w-full" />
+					<Skeleton className="h-18 w-full rounded" />
+					<Skeleton className="h-10 w-full" />
+				</div>
 			</div>
 		</div>
 	);
@@ -172,102 +178,93 @@ export function InvitationsView({
 
 	return (
 		<>
-			<div className="h-full lg:grid lg:grid-cols-[1fr_18rem]">
-				{/* Main Content */}
-				<div className="flex flex-col border-b lg:border-b-0">
-					<Tabs
-						className="flex h-full flex-col"
-						onValueChange={setTab}
-						value={selectedTab}
-						variant="underline"
-					>
-						{/* Tabs */}
-						<TabsList>
-							<TabsTrigger value="pending">
-								<ClockIcon className="size-3.5" weight="duotone" />
-								Pending
-								{pendingCount > 0 && (
-									<span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-amber-600 text-xs dark:text-amber-500">
-										{pendingCount}
-									</span>
-								)}
-							</TabsTrigger>
-							<TabsTrigger value="expired">
-								<XIcon className="size-3.5" weight="bold" />
-								Expired
-								{expiredCount > 0 && (
-									<span className="rounded-full bg-secondary px-1.5 py-0.5 text-secondary-foreground text-xs">
-										{expiredCount}
-									</span>
-								)}
-							</TabsTrigger>
-							<TabsTrigger value="accepted">
-								<CheckIcon className="size-3.5" weight="bold" />
-								Accepted
-								{acceptedCount > 0 && (
-									<span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-green-600 text-xs dark:text-green-500">
-										{acceptedCount}
-									</span>
-								)}
-							</TabsTrigger>
-						</TabsList>
+			<Tabs
+				className="flex h-full flex-col gap-0"
+				onValueChange={setTab}
+				value={selectedTab}
+				variant="navigation"
+			>
+				<TabsList>
+					<TabsTrigger value="pending">
+						<ClockIcon weight="duotone" />
+						Pending
+						{pendingCount > 0 && (
+							<TabsBadge forValue="pending">{pendingCount}</TabsBadge>
+						)}
+					</TabsTrigger>
+					<TabsTrigger value="expired">
+						<XIcon weight="bold" />
+						Expired
+						{expiredCount > 0 && (
+							<TabsBadge forValue="expired">{expiredCount}</TabsBadge>
+						)}
+					</TabsTrigger>
+					<TabsTrigger value="accepted">
+						<CheckIcon weight="bold" />
+						Accepted
+						{acceptedCount > 0 && (
+							<TabsBadge forValue="accepted">{acceptedCount}</TabsBadge>
+						)}
+					</TabsTrigger>
+				</TabsList>
 
-						{/* Content */}
-						<div className="flex-1 overflow-y-auto">
-							<TabsContent className="m-0 h-full" value="pending">
-								{pendingCount > 0 ? (
-									<InvitationList
-										invitations={filteredInvitations}
-										isCancellingInvitation={isCancelling}
-										onCancelInvitationAction={cancelInvitation}
-									/>
-								) : (
-									<TabEmptyState type="pending" />
-								)}
-							</TabsContent>
+				<div className="min-h-0 flex-1 lg:grid lg:grid-cols-[1fr_18rem]">
+					<div className="flex flex-col overflow-y-auto border-b lg:border-b-0">
+						<TabsContent className="m-0 h-full" value="pending">
+							{pendingCount > 0 ? (
+								<InvitationList
+									invitations={filteredInvitations}
+									isCancellingInvitation={isCancelling}
+									onCancelInvitationAction={cancelInvitation}
+								/>
+							) : (
+								<TabEmptyState type="pending" />
+							)}
+						</TabsContent>
 
-							<TabsContent className="m-0 h-full" value="expired">
-								{expiredCount > 0 ? (
-									<InvitationList
-										invitations={filteredInvitations}
-										isCancellingInvitation={isCancelling}
-										onCancelInvitationAction={cancelInvitation}
-									/>
-								) : (
-									<TabEmptyState type="expired" />
-								)}
-							</TabsContent>
+						<TabsContent className="m-0 h-full" value="expired">
+							{expiredCount > 0 ? (
+								<InvitationList
+									invitations={filteredInvitations}
+									isCancellingInvitation={isCancelling}
+									onCancelInvitationAction={cancelInvitation}
+								/>
+							) : (
+								<TabEmptyState type="expired" />
+							)}
+						</TabsContent>
 
-							<TabsContent className="m-0 h-full" value="accepted">
-								{acceptedCount > 0 ? (
-									<InvitationList
-										invitations={filteredInvitations}
-										isCancellingInvitation={isCancelling}
-										onCancelInvitationAction={cancelInvitation}
-									/>
-								) : (
-									<TabEmptyState type="accepted" />
-								)}
-							</TabsContent>
-						</div>
-					</Tabs>
+						<TabsContent className="m-0 h-full" value="accepted">
+							{acceptedCount > 0 ? (
+								<InvitationList
+									invitations={filteredInvitations}
+									isCancellingInvitation={isCancelling}
+									onCancelInvitationAction={cancelInvitation}
+								/>
+							) : (
+								<TabEmptyState type="accepted" />
+							)}
+						</TabsContent>
+					</div>
+
+					<RightSidebar className="gap-4 p-5">
+						<Button
+							className="w-full"
+							onClick={() => setShowInviteDialog(true)}
+						>
+							<UserPlusIcon className="mr-2" size={16} />
+							Send Invitation
+						</Button>
+						<RightSidebar.InfoCard
+							description="Pending"
+							icon={EnvelopeIcon}
+							title={`${pendingCount} / ${totalCount}`}
+						/>
+						<RightSidebar.DocsLink />
+						<RightSidebar.Tip description="Invitations expire after 7 days. Resend if needed from the pending tab." />
+					</RightSidebar>
 				</div>
-
-				{/* Sidebar */}
-				<RightSidebar className="gap-4 p-5">
-					<Button className="w-full" onClick={() => setShowInviteDialog(true)}>
-						<UserPlusIcon className="mr-2" size={16} />
-						Send Invitation
-					</Button>
-					<RightSidebar.InfoCard
-						description="Pending"
-						icon={EnvelopeIcon}
-						title={`${pendingCount} / ${totalCount}`}
-					/>
-					<RightSidebar.DocsLink />
-					<RightSidebar.Tip description="Invitations expire after 7 days. Resend if needed from the pending tab." />
-				</RightSidebar>
-			</div>
+			</Tabs>
 
 			<InviteMemberDialog
 				onOpenChange={setShowInviteDialog}

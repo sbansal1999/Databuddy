@@ -22,18 +22,28 @@ import {
 	getDefaultCategory,
 } from "./navigation-config";
 
-type MobileCategorySelectorProps = {
+interface User {
+	name?: string | null;
+	email?: string | null;
+	image?: string | null;
+}
+
+interface MobileCategorySelectorProps {
 	onCategoryChangeAction?: (categoryId: string) => void;
 	selectedCategory?: string;
-};
+	user: User | null;
+}
 
 export function MobileCategorySelector({
 	onCategoryChangeAction,
 	selectedCategory,
+	user,
 }: MobileCategorySelectorProps) {
 	const pathname = usePathname();
-	const { websites, isLoading: isLoadingWebsites } = useWebsites();
-	const { isEnabled } = useFlags();
+	const { websites, isLoading: isLoadingWebsites } = useWebsites({
+		enabled: user !== null,
+	});
+	const { isOn } = useFlags();
 
 	const { categories, defaultCategory } = useMemo(() => {
 		const baseConfig = getContextConfig(pathname);
@@ -56,14 +66,14 @@ export function MobileCategorySelector({
 			pathname
 		).filter((category) => {
 			if (category.flag) {
-				const flagState = isEnabled(category.flag);
-				return flagState.isReady && flagState.enabled;
+				const flagState = isOn(category.flag);
+				return flagState;
 			}
 			return true;
 		});
 
 		return { categories: filteredCategories, defaultCategory: defaultCat };
-	}, [pathname, websites, isLoadingWebsites, isEnabled]);
+	}, [pathname, websites, isLoadingWebsites, isOn]);
 
 	const activeCategory = selectedCategory || defaultCategory;
 	const currentCategory = categories.find((cat) => cat.id === activeCategory);

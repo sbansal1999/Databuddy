@@ -1,15 +1,20 @@
 import { chQuery } from "@databuddy/db";
 import { referrers } from "@databuddy/shared/lists/referrers";
 
-// Types
-export type AnalyticsStep = {
+export interface AnalyticsStep {
 	step_number: number;
 	name: string;
 	type: "PAGE_VIEW" | "EVENT";
 	target: string;
-};
+}
 
-export type StepAnalytics = {
+export interface StepErrorInsight {
+	message: string;
+	error_type: string;
+	count: number;
+}
+
+export interface StepAnalytics {
 	step_number: number;
 	step_name: string;
 	users: number;
@@ -18,9 +23,12 @@ export type StepAnalytics = {
 	dropoffs: number;
 	dropoff_rate: number;
 	avg_time_to_complete: number;
-};
+	error_count: number;
+	error_rate: number;
+	top_errors: StepErrorInsight[];
+}
 
-export type FunnelAnalytics = {
+export interface FunnelAnalytics {
 	overall_conversion_rate: number;
 	total_users_entered: number;
 	total_users_completed: number;
@@ -29,15 +37,21 @@ export type FunnelAnalytics = {
 	biggest_dropoff_step: number;
 	biggest_dropoff_rate: number;
 	steps_analytics: StepAnalytics[];
-};
+	error_insights: {
+		total_errors: number;
+		sessions_with_errors: number;
+		dropoffs_with_errors: number;
+		error_correlation_rate: number;
+	};
+}
 
-export type ReferrerAnalytics = {
+export interface ReferrerAnalytics {
 	referrer: string;
 	referrer_parsed: { name: string; type: string; domain: string };
 	total_users: number;
 	completed_users: number;
 	conversion_rate: number;
-};
+}
 
 export type ClickhouseQueryParamValue =
 	| string
@@ -50,13 +64,21 @@ export type ClickhouseQueryParamValue =
 
 export type ClickhouseQueryParams = Record<string, ClickhouseQueryParamValue>;
 
-type Filter = {
+interface Filter {
 	field: string;
 	operator: string;
 	value: string | readonly string[];
-};
-type VisitorStep = { step: number; time: number; referrer?: string };
-type ParsedReferrer = { name: string; type: string; domain: string };
+}
+interface VisitorStep {
+	step: number;
+	time: number;
+	referrer?: string;
+}
+interface ParsedReferrer {
+	name: string;
+	type: string;
+	domain: string;
+}
 
 // Helpers
 const ESCAPE_BACKSLASH_REGEX = /\\/g;
@@ -319,6 +341,93 @@ const countStepCompletions = (
 	return counts;
 };
 
+interface ErrorRow {
+	path: string;
+	vid: string;
+	error_type: string;
+	message: string;
+	error_count: number;
+}
+
+const queryFunnelErrors = async (
+	steps: AnalyticsStep[],
+	funnelVids: Set<string>,
+	params: ClickhouseQueryParams
+): Promise<{
+	errorsByPath: Map<string, ErrorRow[]>;
+	sessionsWithErrors: Set<string>;
+	totalErrors: number;
+}> => {
+	if (funnelVids.size === 0) {
+		return {
+			errorsByPath: new Map(),
+			sessionsWithErrors: new Set(),
+			totalErrors: 0,
+		};
+	}
+
+	const firstStep = steps[0];
+	if (!firstStep) {
+		return {
+			errorsByPath: new Map(),
+			sessionsWithErrors: new Set(),
+			totalErrors: 0,
+		};
+	}
+
+	params.firstStepTarget = firstStep.target;
+
+	const subquery =
+		firstStep.type === "PAGE_VIEW"
+			? `SELECT DISTINCT anonymous_id FROM analytics.events
+			   WHERE client_id = {websiteId:String}
+			   AND time >= parseDateTimeBestEffort({startDate:String})
+			   AND time <= parseDateTimeBestEffort({endDate:String})
+			   AND event_name = 'screen_view'
+			   AND path = {firstStepTarget:String}`
+			: `SELECT DISTINCT anonymous_id FROM analytics.events
+			   WHERE client_id = {websiteId:String}
+			   AND time >= parseDateTimeBestEffort({startDate:String})
+			   AND time <= parseDateTimeBestEffort({endDate:String})
+			   AND event_name = {firstStepTarget:String}`;
+
+	const errorRows = await chQuery<ErrorRow>(
+		`SELECT 
+			path,
+			anonymous_id as vid,
+			error_type,
+			any(message) as message,
+			count() as error_count
+		FROM analytics.error_spans
+		WHERE client_id = {websiteId:String}
+			AND timestamp >= parseDateTimeBestEffort({startDate:String})
+			AND timestamp <= parseDateTimeBestEffort({endDate:String})
+			AND anonymous_id IN (${subquery})
+		GROUP BY path, anonymous_id, error_type
+		ORDER BY error_count DESC
+		LIMIT 1000`,
+		params
+	);
+
+	const errorsByPath = new Map<string, ErrorRow[]>();
+	const sessionsWithErrors = new Set<string>();
+	let totalErrors = 0;
+
+	for (const row of errorRows) {
+		sessionsWithErrors.add(row.vid);
+		totalErrors += row.error_count;
+
+		const existing = errorsByPath.get(row.path);
+		if (existing) {
+			existing.push(row);
+		} else {
+			errorsByPath.set(row.path, [row]);
+		}
+	}
+
+	return { errorsByPath, sessionsWithErrors, totalErrors };
+};
+
 // Main funnel analytics
 export const processFunnelAnalytics = async (
 	steps: AnalyticsStep[],
@@ -346,14 +455,23 @@ export const processFunnelAnalytics = async (
 	const totalSteps = steps.length;
 	const totalUsers = counts.get(1)?.size || 0;
 
-	// Calculate step timings
+	// Get all visitor IDs in the funnel
+	const allFunnelVids = new Set(visitors.keys());
+
+	// Query errors for funnel sessions
+	const { errorsByPath, sessionsWithErrors, totalErrors } =
+		await queryFunnelErrors(steps, allFunnelVids, params);
+
+	// Calculate step timings and track drop-offs per step
 	const completionTimes: number[] = [];
 	const stepTimes = new Map<number, number[]>();
+	const dropoffsByStep = new Map<number, Set<string>>();
 
-	for (const [, stepList] of visitors) {
+	for (const [vid, stepList] of visitors) {
 		let expected = 1;
 		let firstTime = 0;
 		let prevTime = 0;
+		let lastCompletedStep = 0;
 
 		for (const s of stepList) {
 			if (s.step === expected) {
@@ -371,19 +489,79 @@ export const processFunnelAnalytics = async (
 				if (expected === totalSteps) {
 					completionTimes.push(s.time - firstTime);
 				}
+				lastCompletedStep = expected;
 				expected += 1;
+			}
+		}
+
+		// Track which step they dropped off at
+		if (lastCompletedStep > 0 && lastCompletedStep < totalSteps) {
+			const dropStep = lastCompletedStep + 1;
+			let set = dropoffsByStep.get(dropStep);
+			if (!set) {
+				set = new Set();
+				dropoffsByStep.set(dropStep, set);
+			}
+			set.add(vid);
+		}
+	}
+
+	// Calculate drop-offs with errors (correlation)
+	let dropoffsWithErrors = 0;
+	let totalDropoffs = 0;
+
+	for (const [, dropVids] of dropoffsByStep) {
+		for (const vid of dropVids) {
+			totalDropoffs++;
+			if (sessionsWithErrors.has(vid)) {
+				dropoffsWithErrors++;
 			}
 		}
 	}
 
 	const avgTime = avg(completionTimes);
 
-	// Build step analytics
+	// Build step analytics with error insights
 	const stepsAnalytics: StepAnalytics[] = steps.map((s, i) => {
 		const stepNum = i + 1;
 		const users = counts.get(stepNum)?.size || 0;
 		const prev = i > 0 ? counts.get(i)?.size || 0 : users;
 		const drops = i > 0 ? prev - users : 0;
+
+		// Get errors for this step's path
+		const stepErrors = errorsByPath.get(s.target) ?? [];
+		const stepErrorCount = stepErrors.reduce(
+			(sum, e) => sum + e.error_count,
+			0
+		);
+		const usersWithErrors = new Set(stepErrors.map((e) => e.vid)).size;
+
+		// Aggregate top errors by type
+		const errorsByType = new Map<
+			string,
+			{ message: string; count: number; type: string }
+		>();
+		for (const e of stepErrors) {
+			const existing = errorsByType.get(e.error_type);
+			if (existing) {
+				existing.count += e.error_count;
+			} else {
+				errorsByType.set(e.error_type, {
+					message: e.message,
+					count: e.error_count,
+					type: e.error_type,
+				});
+			}
+		}
+
+		const topErrors = [...errorsByType.values()]
+			.sort((a, b) => b.count - a.count)
+			.slice(0, 3)
+			.map((e) => ({
+				message: e.message,
+				error_type: e.type,
+				count: e.count,
+			}));
 
 		return {
 			step_number: stepNum,
@@ -393,7 +571,10 @@ export const processFunnelAnalytics = async (
 			conversion_rate: i > 0 ? pct(users, prev) : 100,
 			dropoffs: drops,
 			dropoff_rate: i > 0 ? pct(drops, prev) : 0,
-			avg_time_to_complete: avg(stepTimes.get(stepNum) || []),
+			avg_time_to_complete: avg(stepTimes.get(stepNum) ?? []),
+			error_count: stepErrorCount,
+			error_rate: pct(usersWithErrors, users),
+			top_errors: topErrors,
 		};
 	});
 
@@ -414,6 +595,12 @@ export const processFunnelAnalytics = async (
 		biggest_dropoff_step: biggestDropoff?.step_number || 1,
 		biggest_dropoff_rate: biggestDropoff?.dropoff_rate || 0,
 		steps_analytics: stepsAnalytics,
+		error_insights: {
+			total_errors: totalErrors,
+			sessions_with_errors: sessionsWithErrors.size,
+			dropoffs_with_errors: dropoffsWithErrors,
+			error_correlation_rate: pct(dropoffsWithErrors, totalDropoffs),
+		},
 	};
 };
 
@@ -433,7 +620,44 @@ export const processGoalAnalytics = async (
 		params
 	);
 
-	const completions = new Set(rows.map((r) => r.vid)).size;
+	const goalVids = new Set(rows.map((r) => r.vid));
+	const completions = goalVids.size;
+
+	// Query errors for goal sessions
+	const { errorsByPath, sessionsWithErrors, totalErrors } =
+		await queryFunnelErrors(steps, goalVids, params);
+
+	// Get errors for this goal's path
+	const stepErrors = errorsByPath.get(step.target) ?? [];
+	const stepErrorCount = stepErrors.reduce((sum, e) => sum + e.error_count, 0);
+	const usersWithErrors = new Set(stepErrors.map((e) => e.vid)).size;
+
+	// Aggregate top errors by type
+	const errorsByType = new Map<
+		string,
+		{ message: string; count: number; type: string }
+	>();
+	for (const e of stepErrors) {
+		const existing = errorsByType.get(e.error_type);
+		if (existing) {
+			existing.count += e.error_count;
+		} else {
+			errorsByType.set(e.error_type, {
+				message: e.message,
+				count: e.error_count,
+				type: e.error_type,
+			});
+		}
+	}
+
+	const topErrors = [...errorsByType.values()]
+		.sort((a, b) => b.count - a.count)
+		.slice(0, 3)
+		.map((e) => ({
+			message: e.message,
+			error_type: e.type,
+			count: e.count,
+		}));
 
 	return {
 		overall_conversion_rate: pct(completions, totalWebsiteUsers),
@@ -453,8 +677,17 @@ export const processGoalAnalytics = async (
 				dropoffs: 0,
 				dropoff_rate: 0,
 				avg_time_to_complete: 0,
+				error_count: stepErrorCount,
+				error_rate: pct(usersWithErrors, completions),
+				top_errors: topErrors,
 			},
 		],
+		error_insights: {
+			total_errors: totalErrors,
+			sessions_with_errors: sessionsWithErrors.size,
+			dropoffs_with_errors: 0,
+			error_correlation_rate: 0,
+		},
 	};
 };
 

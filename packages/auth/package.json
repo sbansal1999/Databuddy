@@ -9,16 +9,14 @@
     "./client": "./src/client/auth-client.ts"
   },
   "dependencies": {
-    "@better-auth/sso": "^1.4.5",
+    "@better-auth/sso": "^1.4.10",
     "@databuddy/db": "*",
     "@databuddy/email": "*",
     "@databuddy/redis": "*",
     "@databuddy/shared": "*",
-    "better-auth": "^1.4.5",
-    "drizzle-kit": "^0.31.5",
-    "pg": "^8.16.3",
-    "prettier": "^3.6.2",
-    "resend": "^4.2.0",
+    "better-auth": "^1.4.10",
+    "drizzle-kit": "^0.31.8",
+    "resend": "^4.8.0",
     "zod": "catalog:"
   }
 }

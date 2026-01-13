@@ -2,47 +2,58 @@ import {
 	Body,
 	Container,
 	Head,
-	Hr,
 	Html,
 	Preview,
+	Section,
 	Tailwind,
-	Text,
 } from "@react-email/components";
+import { EmailFooter } from "./email-footer";
+import { EmailHeader } from "./email-header";
 
 interface EmailLayoutProps {
 	preview: string;
+	tagline?: string;
 	children: React.ReactNode;
 }
 
-export const EmailLayout = ({ preview, children }: EmailLayoutProps) => (
+export const EmailLayout = ({
+	preview,
+	tagline,
+	children,
+}: EmailLayoutProps) => (
 	<Html>
-		<Head />
+		<Head>
+			<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+		</Head>
 		<Preview>{preview}</Preview>
 		<Tailwind
 			config={{
 				theme: {
 					extend: {
 						colors: {
-							brand: "#7a42ff",
-							background: "#212124",
-							foreground: "#f2f2f2",
-							card: "#2d2d30",
-							"card-foreground": "#f2f2f2",
-							border: "#636369",
-							muted: "#b3b3b3",
-							"muted-foreground": "#b3b3b3",
+							brand: "#3030ed",
+							background: "#111114",
+							card: "#1a1a1d",
+							foreground: "#d7d7dd",
+							"card-foreground": "#d7d7dd",
+							border: "#28282c",
+							muted: "#717175",
+							"muted-foreground": "#717175",
 						},
 					},
 				},
 			}}
 		>
-			<Body className="bg-background font-sans text-foreground">
-				<Container className="mx-auto my-8 w-[465px] rounded border border-border border-solid bg-card p-5">
-					{children}
-					<Hr className="my-6 w-full border border-border border-solid" />
-					<Text className="text-center text-muted-foreground">
-						© {new Date().getFullYear()} Databuddy, Inc. All rights reserved.
-					</Text>
+			<Body className="m-0 bg-background font-sans">
+				<Container className="mx-auto my-10 max-w-[520px] px-4">
+					<EmailHeader tagline={tagline} />
+					<Section
+						className="rounded bg-card px-8 py-6"
+						style={{ border: "1px solid #28282c" }}
+					>
+						{children}
+					</Section>
+					<EmailFooter />
 				</Container>
 			</Body>
 		</Tailwind>

@@ -12,7 +12,7 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-type TabsVariant = "default" | "underline" | "pills";
+type TabsVariant = "default" | "underline" | "pills" | "navigation";
 
 const TabsContext = createContext<{
 	variant: TabsVariant;
@@ -74,7 +74,12 @@ function TabsList({
 	const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({});
 
 	useLayoutEffect(() => {
-		if (variant !== "underline" || !listRef.current || !activeValue) return;
+		if (
+			(variant !== "underline" && variant !== "navigation") ||
+			!listRef.current ||
+			!activeValue
+		)
+			return;
 
 		const activeTab = listRef.current.querySelector(
 			`[data-state="active"]`
@@ -90,6 +95,23 @@ function TabsList({
 			});
 		}
 	}, [activeValue, variant]);
+
+	if (variant === "navigation") {
+		return (
+			<div className="relative shrink-0 border-b bg-accent/30">
+				<TabsPrimitive.List
+					className={cn("relative flex h-10 w-full", className)}
+					data-slot="tabs-list"
+					ref={listRef}
+					{...props}
+				/>
+				<div
+					className="absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-200 ease-out"
+					style={indicatorStyle}
+				/>
+			</div>
+		);
+	}
 
 	if (variant === "underline") {
 		return (
@@ -158,12 +180,34 @@ function TabsTrigger({
 		};
 	}, [value, registerTrigger]);
 
+	if (variant === "navigation") {
+		return (
+			<TabsPrimitive.Trigger
+				className={cn(
+					"relative flex cursor-pointer items-center gap-2 px-3 py-2.5",
+					"font-medium text-muted-foreground text-sm transition-colors",
+					"hover:text-foreground",
+					"data-[state=active]:text-foreground",
+					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					"disabled:pointer-events-none disabled:opacity-50",
+					"[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+					"data-[state=active]:[&_svg]:text-primary",
+					className
+				)}
+				data-slot="tabs-trigger"
+				ref={triggerRef}
+				value={value}
+				{...props}
+			/>
+		);
+	}
+
 	if (variant === "underline") {
 		return (
 			<TabsPrimitive.Trigger
 				className={cn(
 					"relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 bg-transparent px-3 py-2",
-					"font-medium text-muted-foreground text-sm  ",
+					"font-medium text-muted-foreground text-sm",
 					"hover:text-foreground",
 					"data-[state=active]:text-foreground",
 					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -231,4 +275,32 @@ function TabsContent({
 	);
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+function TabsBadge({
+	children,
+	forValue,
+	className,
+}: {
+	children: React.ReactNode;
+	forValue: string;
+	className?: string;
+}) {
+	const { activeValue } = useContext(TabsContext);
+	const isActive = activeValue === forValue;
+
+	return (
+		<span
+			className={cn(
+				"flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 font-semibold text-xs tabular-nums transition-colors",
+				isActive
+					? "bg-primary text-primary-foreground"
+					: "bg-muted text-foreground",
+				className
+			)}
+			data-slot="tabs-badge"
+		>
+			{children}
+		</span>
+	);
+}
+
+export { Tabs, TabsList, TabsTrigger, TabsContent, TabsBadge };

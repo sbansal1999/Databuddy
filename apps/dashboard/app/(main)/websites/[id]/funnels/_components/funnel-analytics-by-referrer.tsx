@@ -12,14 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { FunnelAnalyticsByReferrerResult } from "@/hooks/use-funnels";
 import { cn } from "@/lib/utils";
 
-type FunnelAnalyticsByReferrerProps = {
+interface FunnelAnalyticsByReferrerProps {
 	onReferrerChange?: (referrer: string) => void;
 	data: { referrer_analytics: FunnelAnalyticsByReferrerResult[] } | undefined;
 	isLoading: boolean;
 	error: Error | null;
-};
+}
 
-type SourceCardProps = {
+interface SourceCardProps {
 	label: string;
 	domain?: string;
 	users: number;
@@ -27,7 +27,7 @@ type SourceCardProps = {
 	isSelected: boolean;
 	onClick: () => void;
 	isAll?: boolean;
-};
+}
 
 function SourceCard({
 	label,

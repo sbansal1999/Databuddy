@@ -4,11 +4,10 @@ import {
 	db,
 	desc,
 	eq,
+	gt,
 	invitation,
 	member,
 	organization,
-	session,
-	user,
 	websites,
 } from "@databuddy/db";
 import { logger } from "@databuddy/shared/logger";
@@ -23,26 +22,38 @@ import { protectedProcedure, publicProcedure } from "../orpc";
  * If in an organization, returns the org owner's ID.
  * Otherwise, returns the current user's ID.
  */
-async function getBillingOwnerId(userId: string): Promise<{
+async function getBillingOwnerId(
+	userId: string,
+	activeOrganizationId: string | null | undefined
+): Promise<{
 	customerId: string;
 	isOrganization: boolean;
 	canUserUpgrade: boolean;
 }> {
-	const [orgResult] = await db
-		.select({
-			ownerId: user.id,
-			activeOrgId: session.activeOrganizationId,
-		})
-		.from(session)
-		.innerJoin(organization, eq(session.activeOrganizationId, organization.id))
-		.innerJoin(member, eq(organization.id, member.organizationId))
-		.innerJoin(user, eq(member.userId, user.id))
-		.where(and(eq(session.userId, userId), eq(member.role, "owner")))
-		.limit(1);
+	let customerId = userId;
+	let isOrganization = false;
+	let canUserUpgrade = true;
 
-	const customerId = orgResult?.ownerId || userId;
-	const isOrganization = Boolean(orgResult?.activeOrgId);
-	const canUserUpgrade = !isOrganization || orgResult?.ownerId === userId;
+	// If user has an active organization, get the org owner's billing
+	if (activeOrganizationId) {
+		const [orgOwner] = await db
+			.select({ ownerId: member.userId })
+			.from(member)
+			.where(
+				and(
+					eq(member.organizationId, activeOrganizationId),
+					eq(member.role, "owner")
+				)
+			)
+			.limit(1);
+
+		if (orgOwner) {
+			customerId = orgOwner.ownerId;
+			isOrganization = true;
+			// User can only upgrade if they are the org owner
+			canUserUpgrade = orgOwner.ownerId === userId;
+		}
+	}
 
 	return { customerId, isOrganization, canUserUpgrade };
 }
@@ -192,9 +203,40 @@ export const organizationsRouter = {
 			}
 		}),
 
+	getUserPendingInvitations: protectedProcedure.handler(async ({ context }) => {
+		const pendingInvitations = await db
+			.select({
+				id: invitation.id,
+				email: invitation.email,
+				role: invitation.role,
+				status: invitation.status,
+				expiresAt: invitation.expiresAt,
+				createdAt: invitation.createdAt,
+				organizationId: invitation.organizationId,
+				organizationName: organization.name,
+				organizationLogo: organization.logo,
+				inviterId: invitation.inviterId,
+			})
+			.from(invitation)
+			.innerJoin(organization, eq(invitation.organizationId, organization.id))
+			.where(
+				and(
+					eq(invitation.email, context.user.email),
+					eq(invitation.status, "pending"),
+					gt(invitation.expiresAt, new Date())
+				)
+			)
+			.orderBy(desc(invitation.createdAt));
+
+		return pendingInvitations;
+	}),
+
 	getUsage: protectedProcedure.handler(async ({ context }) => {
+		const activeOrgId = (
+			context.session as { activeOrganizationId?: string | null }
+		)?.activeOrganizationId;
 		const { customerId, isOrganization, canUserUpgrade } =
-			await getBillingOwnerId(context.user.id);
+			await getBillingOwnerId(context.user.id, activeOrgId);
 
 		try {
 			const checkResult = await autumn.check({
@@ -256,9 +298,11 @@ export const organizationsRouter = {
 				.optional()
 		)
 		.handler(async ({ context, input }) => {
+			const isDev = process.env.NODE_ENV !== "production";
 			let customerId: string | null = null;
 			let isOrganization = false;
 			let canUserUpgrade = true;
+			let activeOrgId: string | null | undefined;
 
 			// If websiteId is provided, get billing owner from website
 			if (input?.websiteId) {
@@ -270,11 +314,29 @@ export const organizationsRouter = {
 			}
 			// If user is authenticated, use their context
 			else if (context.user) {
-				const userBilling = await getBillingOwnerId(context.user.id);
+				activeOrgId = (
+					context.session as { activeOrganizationId?: string | null }
+				)?.activeOrganizationId;
+				const userBilling = await getBillingOwnerId(
+					context.user.id,
+					activeOrgId
+				);
 				customerId = userBilling.customerId;
 				isOrganization = userBilling.isOrganization;
 				canUserUpgrade = userBilling.canUserUpgrade;
 			}
+
+			const debugInfo = isDev
+				? {
+						_debug: {
+							userId: context.user?.id ?? null,
+							activeOrganizationId: activeOrgId ?? null,
+							customerId,
+							websiteId: input?.websiteId ?? null,
+							sessionId: context.session?.id ?? null,
+						},
+					}
+				: {};
 
 			// No customer ID means we can't look up billing
 			if (!customerId) {
@@ -283,6 +345,7 @@ export const organizationsRouter = {
 					isOrganization: false,
 					canUserUpgrade: false,
 					hasActiveSubscription: false,
+					...debugInfo,
 				};
 			}
 
@@ -296,6 +359,7 @@ export const organizationsRouter = {
 						isOrganization,
 						canUserUpgrade,
 						hasActiveSubscription: false,
+						...debugInfo,
 					};
 				}
 
@@ -313,6 +377,7 @@ export const organizationsRouter = {
 					isOrganization,
 					canUserUpgrade,
 					hasActiveSubscription: Boolean(activeProduct),
+					...debugInfo,
 				};
 			} catch (error) {
 				logger.error(
@@ -328,6 +393,7 @@ export const organizationsRouter = {
 					isOrganization,
 					canUserUpgrade,
 					hasActiveSubscription: false,
+					...debugInfo,
 				};
 			}
 		}),

@@ -40,8 +40,8 @@ export function validateRequest(
 				"Validation Error"
 			);
 			setAttributes({
-				"validation.failed": true,
-				"validation.reason": "payload_too_large",
+				validation_failed: true,
+				validation_reason: "payload_too_large",
 			});
 			return {
 				error: new Response(
@@ -78,8 +78,8 @@ export function validateRequest(
 				"Validation Error"
 			);
 			setAttributes({
-				"validation.failed": true,
-				"validation.reason": "missing_client_id",
+				validation_failed: true,
+				validation_reason: "missing_client_id",
 			});
 			return {
 				error: new Response(
@@ -93,7 +93,7 @@ export function validateRequest(
 		}
 
 		setAttributes({
-			"client.id": clientId,
+			client_id: clientId,
 		});
 
 		const website = await record("getWebsiteByIdV2", () =>
@@ -110,9 +110,9 @@ export function validateRequest(
 				clientId
 			);
 			setAttributes({
-				"validation.failed": true,
-				"validation.reason": "invalid_client_id",
-				"website.status": website?.status || "not_found",
+				validation_failed: true,
+				validation_reason: "invalid_client_id",
+				website_status: website?.status || "not_found",
 			});
 			return {
 				error: new Response(
@@ -129,8 +129,8 @@ export function validateRequest(
 		}
 
 		setAttributes({
-			"website.domain": website.domain,
-			"website.status": website.status,
+			website_domain: website.domain,
+			website_status: website.status,
 		});
 
 		if (website.ownerId) {
@@ -140,6 +140,12 @@ export function validateRequest(
 						customer_id: website.ownerId || "",
 						feature_id: "events",
 						send_event: true,
+						// @ts-expect-error autumn types are not up to date
+						properties: {
+							website_domain: website.domain,
+							website_id: website.id,
+							website_name: website.name,
+						},
 					})
 				);
 				const data = result.data;
@@ -155,9 +161,9 @@ export function validateRequest(
 						clientId
 					);
 					setAttributes({
-						"validation.failed": true,
-						"validation.reason": "exceeded_event_limit",
-						"autumn.allowed": false,
+						validation_failed: true,
+						validation_reason: "exceeded_event_limit",
+						autumn_allowed: false,
 					});
 					return {
 						error: new Response(
@@ -174,15 +180,15 @@ export function validateRequest(
 				}
 
 				setAttributes({
-					"autumn.allowed": data?.allowed ?? false,
-					"autumn.overage_allowed": data?.overage_allowed ?? false,
+					autumn_allowed: data?.allowed ?? false,
+					autumn_overage_allowed: data?.overage_allowed ?? false,
 				});
 			} catch (error) {
 				captureError(error, {
 					message: "Autumn check failed, allowing event through",
 				});
 				setAttributes({
-					"autumn.check_failed": true,
+					autumn_check_failed: true,
 				});
 			}
 		}
@@ -204,9 +210,9 @@ export function validateRequest(
 				clientId
 			);
 			setAttributes({
-				"validation.failed": true,
-				"validation.reason": "origin_not_authorized",
-				"request.origin": origin,
+				validation_failed: true,
+				validation_reason: "origin_not_authorized",
+				request_origin: origin,
 			});
 			return {
 				error: new Response(
@@ -231,9 +237,9 @@ export function validateRequest(
 		const ip = extractIpFromRequest(request);
 
 		setAttributes({
-			"validation.success": true,
-			"request.has_user_agent": Boolean(userAgent),
-			"request.has_ip": Boolean(ip),
+			validation_success: true,
+			request_has_user_agent: Boolean(userAgent),
+			request_has_ip: Boolean(ip),
 		});
 
 		return {
@@ -269,11 +275,11 @@ export function checkForBot(
 				clientId
 			);
 			setAttributes({
-				"validation.failed": true,
-				"validation.reason": "bot_detected",
-				"bot.name": botCheck.botName || "unknown",
-				"bot.category": botCheck.category || "Bot Detection",
-				"bot.detection_reason": botCheck.reason || "unknown_bot",
+				validation_failed: true,
+				validation_reason: "bot_detected",
+				bot_name: botCheck.botName || "unknown",
+				bot_category: botCheck.category || "Bot Detection",
+				bot_detection_reason: botCheck.reason || "unknown_bot",
 			});
 			return {
 				error: new Response(JSON.stringify({ status: "ignored" }), {

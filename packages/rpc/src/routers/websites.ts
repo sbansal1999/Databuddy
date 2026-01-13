@@ -174,23 +174,33 @@ const fetchChartData = async (
       date_range AS (
         SELECT arrayJoin(arrayMap(d -> toDate(today()) - d, range(7))) AS date
       ),
+      aggregated_pageviews AS (
+        SELECT
+          client_id,
+          date,
+          sum(pageviews) AS pageviews
+        FROM analytics.daily_pageviews
+        WHERE client_id IN {websiteIds:Array(String)}
+          AND date >= (today() - 6)
+        GROUP BY client_id, date
+      ),
       has_any_data AS (
         SELECT client_id, 1 AS hasData
-        FROM analytics.daily_pageviews
-        WHERE client_id IN {websiteIds:Array(String)} AND pageviews > 0
+        FROM aggregated_pageviews
+        WHERE pageviews > 0
         GROUP BY client_id
       )
     SELECT
       all_websites.website_id AS websiteId,
       toString(date_range.date) AS date,
-      COALESCE(daily_pageviews.pageviews, 0) AS value,
+      COALESCE(aggregated_pageviews.pageviews, 0) AS value,
       COALESCE(has_any_data.hasData, 0) AS hasAnyData
     FROM
       (SELECT arrayJoin({websiteIds:Array(String)}) AS website_id) AS all_websites
     CROSS JOIN
       date_range
     LEFT JOIN
-      analytics.daily_pageviews ON all_websites.website_id = daily_pageviews.client_id AND date_range.date = daily_pageviews.date
+      aggregated_pageviews ON all_websites.website_id = aggregated_pageviews.client_id AND date_range.date = aggregated_pageviews.date
     LEFT JOIN
       has_any_data ON all_websites.website_id = has_any_data.client_id
     WHERE
@@ -519,6 +529,8 @@ export const websitesRouter = {
 					message: error instanceof Error ? error.message : String(error),
 				});
 			}
+
+			await invalidateWebsiteCaches(input.id, context.user.id);
 
 			logger.info(
 				{

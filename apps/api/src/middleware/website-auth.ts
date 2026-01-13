@@ -1,4 +1,5 @@
 import { auth } from "@databuddy/auth";
+import { and, db, eq, member } from "@databuddy/db";
 import { Elysia } from "elysia";
 import {
 	getApiKeyFromHeader,
@@ -95,7 +96,7 @@ function checkNoWebsiteAuth(
 
 async function checkWebsiteAuth(
 	websiteId: string,
-	sessionUser: unknown,
+	sessionUser: { id: string; name: string; email: string } | unknown,
 	apiKey: Parameters<typeof hasWebsiteScope>[0] | null,
 	apiKeyPresent: boolean
 ): Promise<Response | null> {
@@ -110,9 +111,42 @@ async function checkWebsiteAuth(
 	if (website.isPublic) {
 		return null;
 	}
-	if (sessionUser) {
-		return null;
+
+	// Check session-based authentication
+	if (sessionUser && typeof sessionUser === "object" && "id" in sessionUser) {
+		const userId = (sessionUser as { id: string }).id;
+
+		// Check if user owns the website directly (personal website)
+		if (website.userId === userId && !website.organizationId) {
+			return null;
+		}
+
+		// Check if user has access through organization membership
+		if (website.organizationId) {
+			const membership = await db.query.member.findFirst({
+				where: and(
+					eq(member.userId, userId),
+					eq(member.organizationId, website.organizationId)
+				),
+				columns: {
+					id: true,
+				},
+			});
+
+			if (membership) {
+				return null;
+			}
+		}
+
+		// User is authenticated but doesn't have access to this website
+		return json(403, {
+			success: false,
+			error: "Access denied to this website",
+			code: "FORBIDDEN",
+		});
 	}
+
+	// No session user, check API key
 	if (!apiKeyPresent) {
 		return json(401, {
 			success: false,

@@ -6,12 +6,15 @@ import type { QueryRequest, SimpleQueryConfig } from "./types";
 import { applyPlugins } from "./utils";
 
 type BatchRequest = QueryRequest & { type: string };
-type BatchResult = {
+interface BatchResult {
 	type: string;
 	data: Record<string, unknown>[];
 	error?: string;
-};
-type BatchOptions = { websiteDomain?: string | null; timezone?: string };
+}
+interface BatchOptions {
+	websiteDomain?: string | null;
+	timezone?: string;
+}
 
 function getSchemaSignature(config: SimpleQueryConfig): string | null {
 	const fields = config.meta?.output_fields;
@@ -44,17 +47,17 @@ function runSingle(
 			const data = await builder.execute();
 
 			setAttributes({
-				"query.type": req.type,
-				"query.from": req.from,
-				"query.to": req.to,
-				"query.rows": data.length,
-				"query.duration_ms": Math.round(performance.now() - startTime),
+				query_type: req.type,
+				query_from: req.from,
+				query_to: req.to,
+				query_rows: data.length,
+				query_duration_ms: Math.round(performance.now() - startTime),
 			});
 
 			return { type: req.type, data };
 		} catch (e) {
 			const error = e instanceof Error ? e.message : "Query failed";
-			setAttributes({ "query.error": error });
+			setAttributes({ query_error: error });
 			return { type: req.type, data: [], error };
 		}
 	});
@@ -147,8 +150,8 @@ export function executeBatch(
 		const startTime = performance.now();
 
 		setAttributes({
-			"batch.size": requests.length,
-			"batch.types": requests.map((r) => r.type).join(","),
+			batch_size: requests.length,
+			batch_types: requests.map((r) => r.type).join(","),
 		});
 
 		if (requests.length === 1 && requests[0]) {
@@ -179,9 +182,9 @@ export function executeBatch(
 				const queryDuration = Math.round(performance.now() - queryStart);
 
 				setAttributes({
-					"batch.union.query_count": indices.length,
-					"batch.union.rows": rawRows.length,
-					"batch.union.duration_ms": queryDuration,
+					batch_union_query_count: indices.length,
+					batch_union_rows: rawRows.length,
+					batch_union_duration_ms: queryDuration,
 				});
 
 				const split = splitResults(
@@ -207,9 +210,9 @@ export function executeBatch(
 		}
 
 		setAttributes({
-			"batch.union_groups": unionCount,
-			"batch.single_queries": singleCount,
-			"batch.duration_ms": Math.round(performance.now() - startTime),
+			batch_union_groups: unionCount,
+			batch_single_queries: singleCount,
+			batch_duration_ms: Math.round(performance.now() - startTime),
 		});
 
 		return results.map(

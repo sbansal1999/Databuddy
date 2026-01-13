@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	ArrowClockwiseIcon,
 	ArrowRightIcon,
 	ChartBarIcon,
 	FunnelIcon,
@@ -8,7 +9,9 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { parseAsString, useQueryState } from "nuqs";
+import { useMemo } from "react";
+import { EmptyState } from "@/components/empty-state";
 import {
 	Select,
 	SelectContent,
@@ -26,6 +29,7 @@ import type {
 
 interface SummaryViewProps {
 	events: ClassifiedEvent[];
+	isFetching?: boolean;
 	isLoading?: boolean;
 	onFilterAction: (
 		eventName: string,
@@ -36,12 +40,16 @@ interface SummaryViewProps {
 
 export function SummaryView({
 	events,
+	isFetching,
 	isLoading,
 	onFilterAction,
 }: SummaryViewProps) {
 	const params = useParams();
 	const websiteId = params.id as string;
-	const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+	const [selectedEvent, setSelectedEvent] = useQueryState(
+		"event",
+		parseAsString.withDefault("")
+	);
 
 	const activeEvent = useMemo(() => {
 		if (selectedEvent) {
@@ -56,14 +64,13 @@ export function SummaryView({
 
 	if (events.length === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center py-12 text-center">
-				<ChartBarIcon
-					className="size-10 text-muted-foreground/40"
-					weight="duotone"
+			<div className="flex flex-1 items-center justify-center py-12">
+				<EmptyState
+					description="No aggregatable properties found"
+					icon={<ChartBarIcon />}
+					title="No properties"
+					variant="minimal"
 				/>
-				<p className="mt-3 text-muted-foreground text-sm">
-					No aggregatable properties found
-				</p>
 			</div>
 		);
 	}
@@ -97,6 +104,12 @@ export function SummaryView({
 							{activeEvent.summaryProperties.length} propert
 							{activeEvent.summaryProperties.length !== 1 ? "ies" : "y"}
 						</span>
+						{isFetching && !isLoading && (
+							<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+								<ArrowClockwiseIcon className="size-3 animate-spin" />
+								<span>Updating…</span>
+							</div>
+						)}
 						<Link
 							className="flex items-center gap-1 text-primary text-sm transition-colors hover:text-primary/80 hover:underline"
 							href={`/websites/${websiteId}/events/${encodeURIComponent(activeEvent.name)}`}
@@ -122,17 +135,13 @@ export function SummaryView({
 			)}
 
 			{activeEvent && activeEvent.summaryProperties.length === 0 && (
-				<div className="flex flex-col items-center justify-center py-12 text-center">
-					<ListBulletsIcon
-						className="size-8 text-muted-foreground/40"
-						weight="duotone"
+				<div className="flex flex-1 items-center justify-center py-12">
+					<EmptyState
+						description="This event has no aggregatable properties. Check the Stream tab for individual event details."
+						icon={<ListBulletsIcon />}
+						title="No aggregatable properties"
+						variant="minimal"
 					/>
-					<p className="mt-3 text-muted-foreground text-sm">
-						This event has no aggregatable properties.
-					</p>
-					<p className="text-muted-foreground/60 text-xs">
-						Check the Stream tab for individual event details.
-					</p>
 				</div>
 			)}
 		</div>
@@ -184,7 +193,8 @@ function PropertyCard({
 
 					return (
 						<button
-							className="group relative flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-accent/50"
+							aria-label={`Filter by ${property.key}: ${displayValue || "empty"}`}
+							className="group relative flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-accent/50 focus:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 							key={`${displayValue}-${idx}`}
 							onClick={() =>
 								onFilterAction(eventName, property.key, displayValue)
@@ -210,7 +220,8 @@ function PropertyCard({
 										{percentage.toFixed(0)}%
 									</span>
 									<FunnelIcon
-										className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+										aria-hidden="true"
+										className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100"
 										weight="duotone"
 									/>
 								</div>

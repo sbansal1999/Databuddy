@@ -76,6 +76,7 @@ export function WebsiteDialog({
 
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
+		mode: "onChange",
 		defaultValues: {
 			name: "",
 			domain: "",

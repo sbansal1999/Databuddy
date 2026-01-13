@@ -24,13 +24,9 @@ import { agent } from "./routes/agent";
 import { health } from "./routes/health";
 import { publicApi } from "./routes/public";
 import { query } from "./routes/query";
-import { createFlagSchedulerWorker } from "./workers/flag-scheduler-worker";
 
 initTracing();
 setupUncaughtErrorHandlers();
-
-// Start BullMQ worker for flag schedules
-const flagSchedulerWorker = createFlagSchedulerWorker();
 
 const rpcHandler = new RPCHandler(appRouter, {
 	interceptors: [
@@ -175,7 +171,6 @@ export default {
 
 process.on("SIGINT", async () => {
 	logger.info("SIGINT received, shutting down gracefully...");
-	await flagSchedulerWorker.close();
 	await shutdownTracing().catch((error) =>
 		logger.error({ error }, "Shutdown error")
 	);
@@ -184,7 +179,6 @@ process.on("SIGINT", async () => {
 
 process.on("SIGTERM", async () => {
 	logger.info("SIGTERM received, shutting down gracefully...");
-	await flagSchedulerWorker.close();
 	await shutdownTracing().catch((error) =>
 		logger.error({ error }, "Shutdown error")
 	);

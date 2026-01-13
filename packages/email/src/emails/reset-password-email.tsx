@@ -1,4 +1,5 @@
-import { Button, Heading, Section, Text } from "@react-email/components";
+import { Heading, Link, Section, Text } from "@react-email/components";
+import { EmailButton } from "./email-button";
 import { EmailLayout } from "./email-layout";
 
 interface ResetPasswordEmailProps {
@@ -6,36 +7,54 @@ interface ResetPasswordEmailProps {
 }
 
 export const ResetPasswordEmail = ({ url }: ResetPasswordEmailProps) => (
-	<EmailLayout preview="Reset your password">
-		<Section className="my-6">
-			<Heading className="text-center font-semibold text-2xl">
+	<EmailLayout preview="Reset your password" tagline="Password Reset">
+		<Section className="text-center">
+			<Heading
+				className="m-0 mb-3 font-semibold text-xl tracking-tight"
+				style={{ color: "#d7d7dd" }}
+			>
 				Reset Your Password
 			</Heading>
-			<Text className="text-center">
-				Someone requested a password reset for your Databuddy account. If this
-				was you, click the button below to reset your password.
+			<Text
+				className="m-0 mb-6 text-sm leading-relaxed"
+				style={{ color: "#717175" }}
+			>
+				We received a request to reset your password. Click the button below to
+				choose a new one.
 			</Text>
 		</Section>
 		<Section className="text-center">
-			<Button
-				className="rounded bg-brand px-5 py-3 text-center font-medium text-sm text-white"
-				href={url}
-			>
-				Reset Password
-			</Button>
+			<EmailButton href={url}>Reset Password</EmailButton>
 		</Section>
-		<Section className="my-6">
-			<Text className="text-center">
-				This link will expire in 1 hour. If you did not request a password
-				reset, you can safely ignore this email.
+		<Section className="mt-8">
+			<Text
+				className="m-0 mb-2 text-center text-xs"
+				style={{ color: "#717175" }}
+			>
+				This link expires in 1 hour for security reasons.
 			</Text>
-			<Text className="mt-4 text-center text-muted-foreground">
-				If you're having trouble with the button above, copy and paste the URL
-				below into your web browser.
+			<Text
+				className="m-0 text-center text-xs leading-relaxed"
+				style={{ color: "#717175" }}
+			>
+				If you didn't request a password reset, please ignore this email or
+				contact support if you're concerned about your account security.
 			</Text>
-			<Text className="mt-2 max-w-full overflow-x-auto text-center text-muted-foreground text-sm">
+		</Section>
+		<Section
+			className="mt-6 rounded p-4"
+			style={{ backgroundColor: "#111114" }}
+		>
+			<Text className="m-0 mb-2 text-xs" style={{ color: "#717175" }}>
+				Having trouble with the button? Copy and paste this link:
+			</Text>
+			<Link
+				className="text-xs underline"
+				href={url}
+				style={{ color: "#3030ed", wordBreak: "break-all" }}
+			>
 				{url}
-			</Text>
+			</Link>
 		</Section>
 	</EmailLayout>
 );

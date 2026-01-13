@@ -122,9 +122,9 @@ export function startRequestSpan(
 	const span = tracer.startSpan(`${method} ${route ?? path}`, {
 		kind: 1, // SERVER
 		attributes: {
-			"http.method": method,
-			"http.route": route ?? path,
-			"http.target": path,
+			http_method: method,
+			http_route: route ?? path,
+			http_target: path,
 		},
 	});
 
@@ -142,8 +142,8 @@ export function endRequestSpan(
 	statusCode: number,
 	startTime: number
 ): void {
-	span.setAttribute("http.status_code", statusCode);
-	span.setAttribute("http.response.duration_ms", Date.now() - startTime);
+	span.setAttribute("http_status_code", statusCode);
+	span.setAttribute("http_response_duration_ms", Date.now() - startTime);
 	span.setStatus({
 		code: statusCode >= 400 ? SpanStatusCode.ERROR : SpanStatusCode.OK,
 		message: statusCode >= 400 ? `HTTP ${statusCode}` : undefined,

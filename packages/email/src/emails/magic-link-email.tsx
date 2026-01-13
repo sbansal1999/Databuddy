@@ -1,4 +1,5 @@
-import { Button, Heading, Section, Text } from "@react-email/components";
+import { Heading, Link, Section, Text } from "@react-email/components";
+import { EmailButton } from "./email-button";
 import { EmailLayout } from "./email-layout";
 
 interface MagicLinkEmailProps {
@@ -6,35 +7,56 @@ interface MagicLinkEmailProps {
 }
 
 export const MagicLinkEmail = ({ url }: MagicLinkEmailProps) => (
-	<EmailLayout preview="Log in to Databuddy">
-		<Section className="my-6">
-			<Heading className="text-center font-semibold text-2xl">
-				Log in to Databuddy
+	<EmailLayout
+		preview="Your magic link to sign in"
+		tagline="Sign in to Databuddy"
+	>
+		<Section className="text-center">
+			<Heading
+				className="m-0 mb-3 font-semibold text-xl tracking-tight"
+				style={{ color: "#d7d7dd" }}
+			>
+				Your Magic Link
 			</Heading>
-			<Text className="text-center">
-				Click the button below to log in to your Databuddy account.
+			<Text
+				className="m-0 mb-6 text-sm leading-relaxed"
+				style={{ color: "#717175" }}
+			>
+				Click the button below to securely sign in to your account. No password
+				needed.
 			</Text>
 		</Section>
 		<Section className="text-center">
-			<Button
-				className="rounded bg-brand px-5 py-3 text-center font-medium text-sm text-white"
-				href={url}
-			>
-				Log in
-			</Button>
+			<EmailButton href={url}>Sign In to Databuddy</EmailButton>
 		</Section>
-		<Section className="my-6">
-			<Text className="text-center">
-				This link will expire in 24 hours. If you did not try to log in, you can
-				safely ignore this email.
+		<Section className="mt-8">
+			<Text
+				className="m-0 mb-2 text-center text-xs"
+				style={{ color: "#717175" }}
+			>
+				This link expires in 24 hours and can only be used once.
 			</Text>
-			<Text className="mt-4 text-center text-muted-foreground">
-				If you're having trouble with the button above, copy and paste the URL
-				below into your web browser.
+			<Text
+				className="m-0 text-center text-xs leading-relaxed"
+				style={{ color: "#717175" }}
+			>
+				If you didn't request this, you can safely ignore this email.
 			</Text>
-			<Text className="mt-2 max-w-full overflow-x-auto text-center text-muted-foreground text-sm">
+		</Section>
+		<Section
+			className="mt-6 rounded p-4"
+			style={{ backgroundColor: "#111114" }}
+		>
+			<Text className="m-0 mb-2 text-xs" style={{ color: "#717175" }}>
+				Having trouble with the button? Copy and paste this link:
+			</Text>
+			<Link
+				className="text-xs underline"
+				href={url}
+				style={{ color: "#3030ed", wordBreak: "break-all" }}
+			>
 				{url}
-			</Text>
+			</Link>
 		</Section>
 	</EmailLayout>
 );

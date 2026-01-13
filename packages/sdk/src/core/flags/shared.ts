@@ -35,6 +35,12 @@ export function buildQueryParams(
 	if (u?.email) {
 		params.set("email", u.email);
 	}
+	if (u?.organizationId) {
+		params.set("organizationId", u.organizationId);
+	}
+	if (u?.teamId) {
+		params.set("teamId", u.teamId);
+	}
 	if (u?.properties) {
 		params.set("properties", JSON.stringify(u.properties));
 	}

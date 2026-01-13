@@ -7,11 +7,11 @@ function stringifyEvent(event: unknown): string {
 	);
 }
 
-type ProducerConfig = {
+interface ProducerConfig {
 	broker?: string;
 	username?: string;
 	password?: string;
-};
+}
 
 class UptimeProducer {
 	private producer: Producer | null = null;
@@ -65,7 +65,6 @@ class UptimeProducer {
 	async send(topic: string, event: unknown, key?: string): Promise<void> {
 		try {
 			if (!((await this.connect()) && this.producer)) {
-				console.error("Failed to connect to Redpanda, event not sent");
 				return;
 			}
 
@@ -81,7 +80,6 @@ class UptimeProducer {
 			});
 		} catch (error) {
 			captureError(error);
-			console.error("Failed to send event to Redpanda:", error);
 		}
 	}
 

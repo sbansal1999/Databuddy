@@ -9,16 +9,21 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-type UptimeHeatmapProps = {
+interface HeatmapDayData {
+	date: Date;
+	dateStr: string;
+	hasData: boolean;
+	uptime: number;
+}
+
+interface UptimeHeatmapProps {
 	data: {
 		date: string;
-		uptime_percentage?: number; // 0-100
-		total_checks: number;
-		failed_checks: number;
+		uptime_percentage?: number;
 	}[];
 	days?: number;
 	isLoading?: boolean;
-};
+}
 
 export function UptimeHeatmap({
 	data,
@@ -26,14 +31,7 @@ export function UptimeHeatmap({
 	isLoading = false,
 }: UptimeHeatmapProps) {
 	const heatmapData = useMemo(() => {
-		const result: {
-			date: Date;
-			dateStr: string;
-			hasData: boolean;
-			uptime: number;
-			totalChecks: number;
-			failedChecks: number;
-		}[] = [];
+		const result: HeatmapDayData[] = [];
 		const today = dayjs().endOf("day");
 
 		// Generate last X days
@@ -51,8 +49,6 @@ export function UptimeHeatmap({
 				dateStr,
 				hasData: !!dayData,
 				uptime: dayData?.uptime_percentage ?? 0,
-				totalChecks: dayData?.total_checks ?? 0,
-				failedChecks: dayData?.failed_checks ?? 0,
 			});
 		}
 		return result;
@@ -131,13 +127,7 @@ export function UptimeHeatmap({
 													{dayjs(day.date).format("MMM D, YYYY")}
 												</p>
 												{day.hasData ? (
-													<>
-														<p>Uptime: {day.uptime.toFixed(2)}%</p>
-														<p className="text-muted-foreground">
-															{day.failedChecks} failures out of{" "}
-															{day.totalChecks} checks
-														</p>
-													</>
+													<p>Uptime: {day.uptime.toFixed(2)}%</p>
 												) : (
 													<p className="text-muted-foreground">
 														No data recorded

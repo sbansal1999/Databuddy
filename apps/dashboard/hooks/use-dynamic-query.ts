@@ -14,15 +14,27 @@ import { getUserTimezone } from "@/lib/timezone";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-function buildParams(
-	websiteId: string,
-	dateRange?: DateRange,
-	additionalParams?: Record<string, string | number>
-): URLSearchParams {
-	const params = new URLSearchParams({
-		website_id: websiteId,
-		...additionalParams,
-	});
+interface BuildParamsOptions {
+	websiteId?: string;
+	scheduleId?: string;
+	dateRange?: DateRange;
+	additionalParams?: Record<string, string | number>;
+}
+
+function buildParams({
+	websiteId,
+	scheduleId,
+	dateRange,
+	additionalParams,
+}: BuildParamsOptions): URLSearchParams {
+	const params = new URLSearchParams(additionalParams as Record<string, string>);
+
+	// Use schedule_id for custom monitors, website_id for website-linked monitors
+	if (scheduleId) {
+		params.set("schedule_id", scheduleId);
+	} else if (websiteId) {
+		params.set("website_id", websiteId);
+	}
 
 	if (dateRange?.start_date) {
 		params.append("start_date", dateRange.start_date);
@@ -66,14 +78,31 @@ function transformFilters(filters?: DynamicQueryRequest["filters"]) {
 	}));
 }
 
+interface FetchOptions {
+	websiteId?: string;
+	scheduleId?: string;
+}
+
 async function fetchDynamicQuery(
-	websiteId: string,
+	idOrOptions: string | FetchOptions,
 	dateRange: DateRange,
 	queryData: DynamicQueryRequest | DynamicQueryRequest[],
 	signal?: AbortSignal
 ): Promise<DynamicQueryResponse | BatchQueryResponse> {
 	const timezone = getUserTimezone();
-	const params = buildParams(websiteId, dateRange, { timezone });
+
+	// Support both old string API (websiteId) and new options object
+	const options: FetchOptions =
+		typeof idOrOptions === "string"
+			? { websiteId: idOrOptions }
+			: idOrOptions;
+
+	const params = buildParams({
+		websiteId: options.websiteId,
+		scheduleId: options.scheduleId,
+		dateRange,
+		additionalParams: { timezone },
+	});
 	const url = `${API_BASE_URL}/v1/query?${params}`;
 
 	const buildQuery = (query: DynamicQueryRequest) => ({
@@ -185,29 +214,43 @@ export function useDynamicQuery<T extends (keyof ParameterDataMap)[]>(
 	};
 }
 
+interface BatchQueryOptions {
+	websiteId?: string;
+	scheduleId?: string;
+}
+
 export function useBatchDynamicQuery(
-	websiteId: string,
+	idOrOptions: string | BatchQueryOptions,
 	dateRange: DateRange,
 	queries: DynamicQueryRequest[],
 	options?: Partial<UseQueryOptions<BatchQueryResponse>>
 ) {
+	// Support both old string API (websiteId) and new options object
+	const queryOptions: BatchQueryOptions =
+		typeof idOrOptions === "string"
+			? { websiteId: idOrOptions }
+			: idOrOptions;
+
+	const effectiveId = queryOptions.websiteId || queryOptions.scheduleId;
+
 	const fetchData = useCallback(
 		async ({ signal }: { signal?: AbortSignal }) => {
 			const result = await fetchDynamicQuery(
-				websiteId,
+				queryOptions,
 				dateRange,
 				queries,
 				signal
 			);
 			return result as BatchQueryResponse;
 		},
-		[websiteId, dateRange, queries]
+		[queryOptions, dateRange, queries]
 	);
 
 	const query = useQuery({
 		queryKey: [
 			"batch-dynamic-query",
-			websiteId,
+			queryOptions.websiteId,
+			queryOptions.scheduleId,
 			dateRange.start_date,
 			dateRange.end_date,
 			dateRange.granularity,
@@ -217,7 +260,7 @@ export function useBatchDynamicQuery(
 		queryFn: fetchData,
 		...defaultQueryOptions,
 		...options,
-		enabled: options?.enabled !== false && !!websiteId && queries.length > 0,
+		enabled: options?.enabled !== false && !!effectiveId && queries.length > 0,
 	});
 
 	const processedResults = useMemo(() => {
